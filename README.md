@@ -12,6 +12,8 @@ Abra `index.html` no navegador.
 - Botoes do cartao: iniciar missao diretamente
 - Novo jogo: zera o progresso salvo
 
+O projeto tambem inclui favicon, Apple Touch Icon e manifest com icons Android/PWA para hospedagem no GitHub Pages.
+
 ## Progressao principal
 
 - 10 anos: Amigo, Amigo da Natureza
