@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jornada do Lenco</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <section class="game-stage" aria-label="Mapa do clube">
+        <canvas id="game" width="960" height="640"></canvas>
+        <div class="toast" id="toast" aria-live="polite"></div>
+        <div class="mobile-controls" aria-label="Controles moveis">
+          <div class="dpad">
+            <button type="button" data-key="w" aria-label="Cima"></button>
+            <button type="button" data-key="a" aria-label="Esquerda"></button>
+            <button type="button" data-key="s" aria-label="Baixo"></button>
+            <button type="button" data-key="d" aria-label="Direita"></button>
+          </div>
+          <button class="interact-touch" type="button" id="touchInteract" aria-label="Interagir"></button>
+        </div>
+      </section>
+
+      <aside class="panel" aria-label="Cartao de classe">
+        <header class="identity">
+          <div class="avatar-badge">
+            <span id="ageBadge">10</span>
+          </div>
+          <div>
+            <p class="eyebrow">Modo Historia</p>
+            <h1>Jornada do Lenco</h1>
+          </div>
+        </header>
+
+        <section class="card-info">
+          <div>
+            <span>Classe atual</span>
+            <strong id="className">Amigo</strong>
+          </div>
+          <div>
+            <span>Progresso</span>
+            <strong id="progressText">0/4</strong>
+          </div>
+        </section>
+
+        <section class="pin-board" aria-label="Pins conquistados">
+          <h2>Album de PINs</h2>
+          <div id="pinBoard" class="pins"></div>
+        </section>
+
+        <section class="missions" aria-label="Missoes do cartao">
+          <h2>Cartao</h2>
+          <div id="missionList"></div>
+        </section>
+
+        <section class="timeline" aria-label="Progressao principal">
+          <h2>Trilha</h2>
+          <div id="timelineList"></div>
+        </section>
+
+        <footer class="controls">
+          <span>WASD</span>
+          <span>Setas</span>
+          <span>Espaco</span>
+          <button type="button" id="resetBtn">Novo jogo</button>
+        </footer>
+      </aside>
+
+      <dialog id="missionDialog" class="dialog">
+        <form method="dialog" class="dialog-card">
+          <button class="close" type="submit" aria-label="Fechar">x</button>
+          <p class="eyebrow" id="dialogType">Mini-game</p>
+          <h2 id="dialogTitle"></h2>
+          <p id="dialogIntro"></p>
+          <div id="dialogBody" class="dialog-body"></div>
+          <div class="dialog-actions">
+            <button type="button" id="dialogPrimary">Comecar</button>
+          </div>
+        </form>
+      </dialog>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
