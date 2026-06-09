@@ -20,6 +20,12 @@
     dialogBody: document.getElementById("dialogBody"),
     dialogPrimary: document.getElementById("dialogPrimary"),
     touchInteract: document.getElementById("touchInteract"),
+    storyCard: document.getElementById("storyCard"),
+    storyTitle: document.getElementById("storyTitle"),
+    storyText: document.getElementById("storyText"),
+    storyNext: document.getElementById("storyNext"),
+    storySkip: document.getElementById("storySkip"),
+    sound: document.getElementById("soundBtn"),
   };
 
   const TAU = Math.PI * 2;
@@ -57,12 +63,12 @@
     stage(11, "Companheiro", "CP", "#dd4d4d", [
       seq("cp-voto", "Promessa em acao", "Organize uma atitude de companheirismo.", "voto", ["Ouvir", "Ajudar", "Animar", "Agradecer"]),
       delivery("cp-servico", "Missao comunitaria", "Leve 3 cestas ate a tenda de servico.", "comunidade", 3),
-      quiz("cp-amigo", "Convidar um amigo", "Qual convite e mais acolhedor?", "comunidade", "Venha conhecer nossa unidade", ["Voce precisa ser perfeito", "Venha conhecer nossa unidade", "Fique longe da nossa equipe"]),
+      morse("cp-morse", "Codigo Morse da unidade", "Repita os sinais curtos e longos para enviar a palavra AMIGO.", "comunidade", ".- -- .. --. ---"),
     ]),
     stage(11, "Companheiro de Excursionismo", "CE", "#c27c3c", [
       collect("ce-trilha", "Trilha com mochila", "Pegue 4 pontos de rota antes de voltar ao mapa.", "mapa", "rota", 4),
       backpack("ce-mochila", "Mochila esperta", "Prepare a mochila para uma pequena excursao, sem carregar peso inutil.", "acampamento", 10),
-      quiz("ce-seguranca", "Regra de trilha", "Na caminhada, o grupo deve...", "mapa", "Ficar junto e avisar o conselheiro", ["Correr sozinho", "Ficar junto e avisar o conselheiro", "Sair da trilha por curiosidade"]),
+      safety("ce-seguranca", "Trilha segura", "Marque os pontos de seguranca antes de sair com a unidade.", "mapa", ["Grupo junto", "Avisar conselheiro", "Agua", "Rota marcada"]),
     ]),
     stage(12, "Pesquisador", "PS", "#42b7ad", [
       collect("ps-pistas", "Campo de pesquisa", "Colete 5 pistas de plantas, pegadas e pedras.", "natureza", "pista", 5),
@@ -72,7 +78,7 @@
     stage(12, "Pesquisador de Campo e Bosque", "PB", "#3f9e6d", [
       collect("pb-bosque", "Bosque vivo", "Encontre 6 sinais de vida no bosque.", "natureza", "sinal", 6),
       plant("pb-restaurar", "Restaurar a clareira", "Plante 4 mudas para recuperar a clareira.", "natureza", 4),
-      quiz("pb-respeito", "Cuidar do bosque", "O melhor explorador deixa...", "natureza", "O lugar melhor do que encontrou", ["Lixo escondido", "O lugar melhor do que encontrou", "Galhos quebrados por diversao"]),
+      safety("pb-ferramenta", "Faca e facao com seguranca", "Clique apenas nas atitudes seguras antes de cortar um graveto.", "natureza", ["Cortar para longe", "Mao fora da linha", "Area livre", "Supervisao"]),
     ]),
     stage(13, "Pioneiro", "PN", "#f2b84b", [
       seq("pn-ponte", "Ponte pioneira", "Siga a sequencia para erguer uma pequena ponte.", "nos", ["Base", "Amarra", "Teste", "Passagem"]),
@@ -87,12 +93,12 @@
     stage(14, "Excursionista", "EX", "#8c67c6", [
       collect("ex-bussola", "Bussola em movimento", "Encontre 6 pontos cardeais no mapa.", "mapa", "ponto", 6),
       kit("ex-emergencia", "Plano de emergencia", "Escolha atitudes certas para uma surpresa na trilha.", "socorro", ["Parar", "Avisar", "Aguardar"]),
-      quiz("ex-clima", "Mudanca de tempo", "Se o tempo fecha rapido, a equipe deve...", "acampamento", "Procurar abrigo seguro e seguir orientacao", ["Continuar sem avaliar", "Procurar abrigo seguro e seguir orientacao", "Separar o grupo"]),
+      rapel("ex-rapel", "Rapel controlado", "Controle a descida: devagar, com freio e sem passar do limite.", "acampamento"),
     ]),
     stage(14, "Excursionista na Mata", "EM", "#3f9e6d", [
       collect("em-trilha", "Sinais na mata", "Colete 6 sinais de trilha sem se afastar do grupo.", "natureza", "sinal", 6),
       plant("em-acampamento", "Acampamento leve", "Plante 4 marcas verdes para recuperar a area.", "acampamento", 4),
-      quiz("em-fogueira", "Fogueira segura", "Depois da atividade, o fogo deve ficar...", "acampamento", "Totalmente apagado", ["Escondido com folhas", "Totalmente apagado", "Aceso para iluminar a noite toda"]),
+      seq("em-fogueira", "Fogueira segura", "Apague a fogueira na ordem correta.", "acampamento", ["Espalhar", "Agua", "Mexer", "Conferir"]),
     ]),
     stage(15, "Guia", "GU", "#26334f", [
       seq("gu-unidade", "Guiar a unidade", "Organize a resposta de um lider servidor.", "lideranca", ["Perceber", "Orientar", "Acompanhar", "Celebrar"]),
@@ -116,6 +122,7 @@
     ],
     rocks: [],
     paths: [],
+    npcs: [],
   };
 
   const keys = new Set();
@@ -130,10 +137,29 @@
     field: null,
     toastTime: 0,
     selectedMissionId: null,
+    storyIndex: 0,
+    storySeen: false,
+    sound: false,
   };
 
   let lastTime = performance.now();
   let seed = 45619;
+  let audioCtx = null;
+
+  const storySteps = [
+    {
+      title: "Bem-vindo ao clube",
+      text: "Voce comecou com 10 anos. Fale com o conselheiro, complete o cartao de Amigo e conquiste seu primeiro PIN.",
+    },
+    {
+      title: "Como jogar",
+      text: "Ande pelo mapa com WASD ou setas. Chegue perto de uma estacao e aperte Espaco, ou inicie a missao pelo cartao.",
+    },
+    {
+      title: "Cartao vivo",
+      text: "Cada requisito vira uma atividade: mochila, corda, barraca, trilha, plantio, entrega e outras provas praticas.",
+    },
+  ];
 
   function stage(age, name, pin, color, missions) {
     return { age, name, pin, color, missions };
@@ -186,6 +212,18 @@
       kind: "tent",
       steps: ["Lona", "Varetas", "Tecido", "Levantar", "Porta", "Nos", "Espeques"],
     };
+  }
+
+  function morse(id, title, desc, station, pattern) {
+    return { id, title, desc, station, kind: "morse", pattern };
+  }
+
+  function safety(id, title, desc, station, targets) {
+    return { id, title, desc, station, kind: "safety", targets };
+  }
+
+  function rapel(id, title, desc, station) {
+    return { id, title, desc, station, kind: "rapel" };
   }
 
   function collect(id, title, desc, station, token, needed) {
@@ -251,6 +289,7 @@
     mapDecor.trees.length = 0;
     mapDecor.flowers.length = 0;
     mapDecor.rocks.length = 0;
+    mapDecor.npcs.length = 0;
     mapDecor.paths = [
       [900, 650, 520, 390],
       [900, 650, 1280, 395],
@@ -278,6 +317,20 @@
     for (let i = 0; i < 34; i += 1) {
       mapDecor.rocks.push({ x: between(90, WORLD.w - 90), y: between(90, WORLD.h - 90), r: between(12, 28) });
     }
+    const npcColors = ["#dd4d4d", "#2f70b8", "#f2b84b", "#3f9e6d", "#8c67c6"];
+    for (let i = 0; i < 9; i += 1) {
+      const station = stations[(i + 1) % (stations.length - 1)];
+      mapDecor.npcs.push({
+        x: station.x + between(-80, 80),
+        y: station.y + between(-70, 70),
+        homeX: station.x,
+        homeY: station.y,
+        r: between(13, 17),
+        c: npcColors[i % npcColors.length],
+        t: between(0, TAU),
+        name: ["Lia", "Davi", "Nina", "Theo", "Bia", "Rafa", "Mika", "Gabi", "Noah"][i],
+      });
+    }
   }
 
   function load() {
@@ -288,6 +341,8 @@
       state.stageIndex = clamp(Number(saved.stageIndex) || 0, 0, stages.length - 1);
       state.completed = saved.completed || {};
       state.awarded = saved.awarded || {};
+      state.storySeen = Boolean(saved.storySeen);
+      state.sound = Boolean(saved.sound);
     } catch (error) {
       localStorage.removeItem(SAVE_KEY);
     }
@@ -300,6 +355,8 @@
         stageIndex: state.stageIndex,
         completed: state.completed,
         awarded: state.awarded,
+        storySeen: state.storySeen,
+        sound: state.sound,
       }),
     );
   }
@@ -312,10 +369,13 @@
     state.activeMissionId = null;
     state.field = null;
     state.selectedMissionId = null;
+    state.storyIndex = 0;
+    state.storySeen = false;
     player.x = 900;
     player.y = 650;
     save();
     renderUi();
+    renderStory();
     showToast("Novo jogo iniciado. Fale com o conselheiro ou escolha uma missao do cartao.", 3);
   }
 
@@ -325,12 +385,75 @@
     state.toastTime = seconds;
   }
 
+  function renderStory() {
+    if (state.storySeen) {
+      ui.storyCard.classList.add("hidden");
+      return;
+    }
+    const step = storySteps[state.storyIndex] || storySteps[storySteps.length - 1];
+    ui.storyTitle.textContent = step.title;
+    ui.storyText.textContent = step.text;
+    ui.storyNext.textContent = state.storyIndex >= storySteps.length - 1 ? "Comecar" : "Continuar";
+    ui.storyCard.classList.remove("hidden");
+  }
+
+  function closeStory() {
+    state.storySeen = true;
+    ui.storyCard.classList.add("hidden");
+    save();
+    showToast("Primeira missao: complete Voto e Lei ou fale com o Conselheiro.", 3);
+  }
+
+  function initAudio() {
+    if (audioCtx) return audioCtx;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return null;
+    audioCtx = new AudioContext();
+    return audioCtx;
+  }
+
+  function toggleSound() {
+    state.sound = !state.sound;
+    if (state.sound) initAudio();
+    ui.sound.textContent = `Som: ${state.sound ? "on" : "off"}`;
+    save();
+    playSound("click");
+  }
+
+  function playSound(type) {
+    if (!state.sound) return;
+    const ac = initAudio();
+    if (!ac) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    const freqs = {
+      click: [520, 420],
+      done: [620, 920],
+      pin: [520, 780],
+      step: [160, 110],
+      error: [180, 90],
+      plant: [420, 680],
+    };
+    const [start, end] = freqs[type] || freqs.click;
+    osc.type = type === "error" ? "sawtooth" : "sine";
+    osc.frequency.setValueAtTime(start, now);
+    osc.frequency.exponentialRampToValueAtTime(end, now + 0.14);
+    gain.gain.setValueAtTime(type === "pin" ? 0.06 : 0.035, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+    osc.connect(gain);
+    gain.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.18);
+  }
+
   function renderUi() {
     const stageNow = currentStage();
     const doneCount = stageNow.missions.filter(isMissionDone).length;
     ui.age.textContent = stageNow.age;
     ui.className.textContent = stageNow.name;
     ui.progress.textContent = `${doneCount}/${stageNow.missions.length}`;
+    ui.sound.textContent = `Som: ${state.sound ? "on" : "off"}`;
 
     ui.pinBoard.innerHTML = "";
     stages.forEach((item, index) => {
@@ -385,6 +508,11 @@
   function openMission(id) {
     const mission = currentMissions().find((item) => item.id === id);
     if (!mission || isMissionDone(mission)) return;
+    if (!state.storySeen) {
+      state.storySeen = true;
+      ui.storyCard.classList.add("hidden");
+      save();
+    }
     state.selectedMissionId = id;
     state.activeMissionId = id;
     if (mission.kind === "collect" || mission.kind === "plant" || mission.kind === "delivery") {
@@ -397,6 +525,9 @@
     if (mission.kind === "backpack") openBackpackMission(mission);
     if (mission.kind === "rope") openRopeMission(mission);
     if (mission.kind === "tent") openTentMission(mission);
+    if (mission.kind === "morse") openMorseMission(mission);
+    if (mission.kind === "safety") openSafetyMission(mission);
+    if (mission.kind === "rapel") openRapelMission(mission);
   }
 
   function showDialog(mission, type) {
@@ -437,6 +568,7 @@
             setTimeout(() => ui.dialog.close(), 550);
           }
         } else {
+          playSound("error");
           showToast("Quase. Recomece a sequencia com calma.", 1.8);
           index = 0;
           fill.style.width = "0%";
@@ -469,6 +601,7 @@
           completeMission(mission.id);
           setTimeout(() => ui.dialog.close(), 650);
         } else {
+          playSound("error");
           button.classList.add("bad");
           button.disabled = true;
           showToast("Essa escolha nao ajuda a unidade. Tente outra.", 1.8);
@@ -500,6 +633,7 @@
             setTimeout(() => ui.dialog.close(), 650);
           }
         } else {
+          playSound("error");
           button.classList.add("bad");
           button.disabled = true;
           showToast("Esse item nao resolve este desafio.", 1.7);
@@ -710,6 +844,7 @@
       if (current < points.length) {
         trail.length = 0;
         current = 0;
+        playSound("error");
         showToast("A corda escapou. Comece de novo pela Ponta.", 1.7);
         drawRope();
       }
@@ -767,6 +902,169 @@
 
     updateTent();
     ui.dialogBody.append(visual, feedback);
+  }
+
+  function openMorseMission(mission) {
+    showDialog(mission, "Mini-game de codigo Morse");
+    const pattern = mission.pattern.replace(/\s+/g, " ").trim();
+    const target = pattern.replace(/\s/g, "").split("");
+    let index = 0;
+    const board = document.createElement("div");
+    board.className = "morse-board";
+    const patternText = document.createElement("strong");
+    patternText.textContent = pattern;
+    const progress = document.createElement("div");
+    progress.className = "morse-progress";
+    target.forEach((symbol) => {
+      const cell = document.createElement("span");
+      cell.textContent = symbol === "." ? "curto" : "longo";
+      progress.appendChild(cell);
+    });
+    const actions = document.createElement("div");
+    actions.className = "morse-actions";
+    const shortBtn = document.createElement("button");
+    shortBtn.type = "button";
+    shortBtn.textContent = "Curto";
+    const longBtn = document.createElement("button");
+    longBtn.type = "button";
+    longBtn.textContent = "Longo";
+    actions.append(shortBtn, longBtn);
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+    feedback.textContent = "Leia o padrao e repita os sinais na ordem.";
+
+    function press(symbol) {
+      playSound(symbol === "." ? "click" : "plant");
+      if (target[index] !== symbol) {
+        playSound("error");
+        feedback.textContent = "Sinal errado. Reiniciando transmissao.";
+        feedback.className = "mini-feedback bad";
+        index = 0;
+        progress.querySelectorAll("span").forEach((cell) => cell.classList.remove("done"));
+        return;
+      }
+      progress.children[index].classList.add("done");
+      index += 1;
+      feedback.textContent = `${index}/${target.length} sinais enviados.`;
+      feedback.className = "mini-feedback good";
+      if (index >= target.length) {
+        completeMission(mission.id);
+        setTimeout(() => ui.dialog.close(), 800);
+      }
+    }
+
+    shortBtn.addEventListener("click", () => press("."));
+    longBtn.addEventListener("click", () => press("-"));
+    board.append(patternText, progress, actions, feedback);
+    ui.dialogBody.append(board);
+  }
+
+  function openSafetyMission(mission) {
+    showDialog(mission, "Mini-game de seguranca");
+    const selected = new Set();
+    const board = document.createElement("div");
+    board.className = "safety-board";
+    const labels = shuffle([...mission.targets, "Pressa", "Cortar para o corpo", "Ir sozinho", "Brincar com ferramenta"]).slice(0, 8);
+    labels.forEach((label, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `safety-spot spot-${index}`;
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (mission.targets.includes(label)) {
+          selected.add(label);
+          button.classList.add("good");
+          button.disabled = true;
+          playSound("click");
+          if (selected.size === mission.targets.length) {
+            completeMission(mission.id);
+            setTimeout(() => ui.dialog.close(), 800);
+          }
+        } else {
+          button.classList.add("bad");
+          button.disabled = true;
+          playSound("error");
+          showToast("Isso aumenta o risco. Escolha atitudes seguras.", 1.8);
+        }
+      });
+      board.appendChild(button);
+    });
+    const hint = document.createElement("p");
+    hint.className = "mini-feedback";
+    hint.textContent = `Encontre ${mission.targets.length} atitudes seguras.`;
+    ui.dialogBody.append(board, hint);
+  }
+
+  function openRapelMission(mission) {
+    showDialog(mission, "Mini-game de rapel");
+    let depth = 0;
+    let speed = 0;
+    let danger = 0;
+    const wrap = document.createElement("div");
+    wrap.className = "rapel-wrap";
+    const climber = document.createElement("div");
+    climber.className = "rapel-climber";
+    const rope = document.createElement("div");
+    rope.className = "rapel-rope";
+    const controls = document.createElement("div");
+    controls.className = "rapel-controls";
+    const descend = document.createElement("button");
+    descend.type = "button";
+    descend.textContent = "Descer";
+    const brake = document.createElement("button");
+    brake.type = "button";
+    brake.textContent = "Frear";
+    controls.append(descend, brake);
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+    feedback.textContent = "Use Descer e Frear. Mantenha a velocidade controlada.";
+    wrap.append(rope, climber);
+
+    function updateRapel(action) {
+      if (action === "descend") {
+        speed = clamp(speed + 1.05, 0, 6);
+        depth = clamp(depth + 5.8 + speed, 0, 100);
+      } else if (action === "brake") {
+        speed = Math.max(0, speed - 2.2);
+        depth = clamp(depth + 1.4, 0, 100);
+      } else {
+        speed = Math.max(0, speed - 0.2);
+      }
+      climber.style.top = `${16 + depth * 1.76}px`;
+      if (speed > 4.8) {
+        danger += 1;
+        feedback.textContent = "Rapido demais. Use o freio.";
+        feedback.className = "mini-feedback bad";
+        playSound("error");
+      } else {
+        danger = Math.max(0, danger - 1);
+        feedback.textContent = `Descida: ${Math.round(depth)}% | Controle: ${Math.max(0, 6 - Math.round(speed))}`;
+        feedback.className = "mini-feedback";
+      }
+      if (danger >= 3) {
+        depth = clamp(depth - 12, 0, 100);
+        speed = 1.8;
+        danger = 1;
+        climber.style.top = `${16 + depth * 1.76}px`;
+        feedback.textContent = "Pausa de seguranca: freio aplicado e descida corrigida.";
+        feedback.className = "mini-feedback bad";
+      }
+      if (depth >= 100) {
+        completeMission(mission.id);
+        setTimeout(() => ui.dialog.close(), 800);
+      }
+    }
+
+    descend.addEventListener("click", () => {
+      playSound("click");
+      updateRapel("descend");
+    });
+    brake.addEventListener("click", () => {
+      playSound("plant");
+      updateRapel("brake");
+    });
+    ui.dialogBody.append(wrap, controls, feedback);
+    updateRapel();
   }
 
   function openFieldIntro(mission) {
@@ -837,6 +1135,7 @@
     state.activeMissionId = null;
     state.selectedMissionId = null;
     state.field = null;
+    playSound("done");
     showToast("Requisito concluido no cartao.", 2);
     evaluateStage();
     save();
@@ -849,6 +1148,7 @@
     if (state.awarded[stageNow.name]) return;
 
     state.awarded[stageNow.name] = true;
+    playSound("pin");
     const isLast = state.stageIndex === stages.length - 1;
     if (isLast) {
       showToast("Voce completou todas as Classes dos Desbravadores!", 6);
@@ -892,7 +1192,18 @@
     player.vy *= Math.pow(0.05, dt);
 
     updateFieldMission();
+    updateNpcs(dt);
     updateCamera(dt);
+  }
+
+  function updateNpcs(dt) {
+    for (const npc of mapDecor.npcs) {
+      npc.t += dt * 0.9;
+      const targetX = npc.homeX + Math.cos(npc.t * 0.9 + npc.r) * 62;
+      const targetY = npc.homeY + Math.sin(npc.t * 0.7) * 44;
+      npc.x += (targetX - npc.x) * dt * 1.2;
+      npc.y += (targetY - npc.y) * dt * 1.2;
+    }
   }
 
   function getInput() {
@@ -945,12 +1256,14 @@
     if (!field || field.kind !== "plant") return false;
     const spot = field.items.find((item) => !item.planted && distance(player.x, player.y, item.x, item.y) < 58);
     if (!spot) {
+      playSound("error");
       showToast("Chegue perto de uma area brilhante para plantar.", 1.6);
       return false;
     }
     spot.planted = true;
     field.plants.push({ x: spot.x, y: spot.y, age: 0 });
     field.count += 1;
+    playSound("plant");
     showToast(`${field.count}/${field.needed} mudas plantadas.`, 1.2);
     if (field.count >= field.needed) completeMission(field.missionId);
     return true;
@@ -1001,6 +1314,7 @@
     drawPaths();
     drawDecor();
     drawStations();
+    drawNpcs();
     drawField();
     drawPlayer();
     ctx.restore();
@@ -1210,7 +1524,7 @@
       const pending = pendingStations.has(station.id);
       const selected = state.selectedMissionId && currentMissions().find((mission) => mission.id === state.selectedMissionId)?.station === station.id;
       ctx.save();
-      ctx.translate(station.x, station.y);
+      ctx.translate(station.x, station.y + Math.sin(performance.now() * 0.0018 + station.x * 0.01) * 2);
       ctx.fillStyle = "rgba(22,32,51,0.17)";
       ctx.beginPath();
       ctx.ellipse(0, 34, 46, 14, 0, 0, TAU);
@@ -1396,6 +1710,38 @@
     ctx.restore();
   }
 
+  function drawNpcs() {
+    for (const npc of mapDecor.npcs) {
+      ctx.save();
+      ctx.translate(npc.x, npc.y + Math.sin(npc.t * 4) * 1.5);
+      ctx.fillStyle = "rgba(22,32,51,0.16)";
+      ctx.beginPath();
+      ctx.ellipse(0, npc.r + 9, npc.r * 1.2, 5, 0, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#fffaf1";
+      ctx.beginPath();
+      ctx.arc(0, -npc.r * 0.55, npc.r * 0.82, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = npc.c;
+      ctx.beginPath();
+      ctx.arc(0, npc.r * 0.28, npc.r, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#26334f";
+      ctx.beginPath();
+      ctx.moveTo(-npc.r * 0.5, npc.r * 0.15);
+      ctx.lineTo(0, npc.r * 0.74);
+      ctx.lineTo(npc.r * 0.5, npc.r * 0.15);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#162033";
+      ctx.beginPath();
+      ctx.arc(-4, -npc.r * 0.63, 1.8, 0, TAU);
+      ctx.arc(4, -npc.r * 0.63, 1.8, 0, TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   function drawPlayer() {
     ctx.save();
     ctx.translate(player.x, player.y);
@@ -1510,6 +1856,20 @@
     });
     canvas.addEventListener("click", () => interact());
     ui.reset.addEventListener("click", resetGame);
+    ui.sound.addEventListener("click", toggleSound);
+    ui.storyNext.addEventListener("click", () => {
+      playSound("click");
+      if (state.storyIndex >= storySteps.length - 1) {
+        closeStory();
+      } else {
+        state.storyIndex += 1;
+        renderStory();
+      }
+    });
+    ui.storySkip.addEventListener("click", () => {
+      playSound("click");
+      closeStory();
+    });
     ui.touchInteract.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       interact();
@@ -1529,6 +1889,7 @@
   load();
   resize();
   renderUi();
+  renderStory();
   bindEvents();
   showToast("Bem-vindo ao Clube. Complete o cartao e conquiste seus PINs.", 3.2);
   requestAnimationFrame(frame);

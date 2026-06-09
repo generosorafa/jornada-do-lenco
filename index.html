@@ -28,6 +28,15 @@
       <section class="game-stage" aria-label="Mapa do clube">
         <canvas id="game" width="960" height="640"></canvas>
         <div class="toast" id="toast" aria-live="polite"></div>
+        <section class="story-card" id="storyCard" aria-live="polite">
+          <p class="eyebrow">Bem-vindo ao clube</p>
+          <h2 id="storyTitle">Sua jornada vai comecar</h2>
+          <p id="storyText"></p>
+          <div class="story-actions">
+            <button type="button" id="storySkip">Pular</button>
+            <button type="button" id="storyNext">Continuar</button>
+          </div>
+        </section>
         <div class="mobile-controls" aria-label="Controles moveis">
           <div class="dpad">
             <button type="button" data-key="w" aria-label="Cima"></button>
@@ -80,6 +89,7 @@
           <span>WASD</span>
           <span>Setas</span>
           <span>Espaco</span>
+          <button type="button" id="soundBtn">Som: off</button>
           <button type="button" id="resetBtn">Novo jogo</button>
         </footer>
       </aside>
