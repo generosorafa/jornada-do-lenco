@@ -874,7 +874,7 @@
     }
 
     const input = getInput();
-    const speed = 380;
+    const speed = 235;
     if (input.x || input.y) {
       player.vx += input.x * speed * 5 * dt;
       player.vy += input.y * speed * 5 * dt;
@@ -1008,10 +1008,14 @@
   }
 
   function drawGround() {
-    ctx.fillStyle = "#90cf82";
+    const ground = ctx.createLinearGradient(0, 0, WORLD.w, WORLD.h);
+    ground.addColorStop(0, "#a5d78f");
+    ground.addColorStop(0.45, "#87ca7a");
+    ground.addColorStop(1, "#75bfa1");
+    ctx.fillStyle = ground;
     ctx.fillRect(0, 0, WORLD.w, WORLD.h);
     ctx.save();
-    ctx.globalAlpha = 0.18;
+    ctx.globalAlpha = 0.16;
     for (let y = -80; y < WORLD.h + 80; y += 88) {
       ctx.beginPath();
       for (let x = -40; x < WORLD.w + 60; x += 80) {
@@ -1022,6 +1026,18 @@
       ctx.lineWidth = 18;
       ctx.strokeStyle = y % 176 === 0 ? "#5eb980" : "#f1d06c";
       ctx.stroke();
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    for (let i = 0; i < 190; i += 1) {
+      const x = (i * 137) % WORLD.w;
+      const y = (i * 277) % WORLD.h;
+      ctx.fillStyle = i % 3 === 0 ? "#fffaf1" : "#2f7d59";
+      ctx.beginPath();
+      ctx.ellipse(x, y, 4 + (i % 4), 1.7, i * 0.3, 0, TAU);
+      ctx.fill();
     }
     ctx.restore();
 
@@ -1036,9 +1052,17 @@
 
   function drawPaths() {
     ctx.save();
-    ctx.strokeStyle = "rgba(139, 103, 59, 0.24)";
-    ctx.lineWidth = 24;
+    ctx.strokeStyle = "rgba(85, 78, 54, 0.12)";
+    ctx.lineWidth = 34;
     ctx.lineCap = "round";
+    for (const path of mapDecor.paths) {
+      ctx.beginPath();
+      ctx.moveTo(path[0], path[1]);
+      ctx.quadraticCurveTo((path[0] + path[2]) * 0.5, (path[1] + path[3]) * 0.5 + 30, path[2], path[3]);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = "rgba(213, 180, 98, 0.34)";
+    ctx.lineWidth = 18;
     for (const path of mapDecor.paths) {
       ctx.beginPath();
       ctx.moveTo(path[0], path[1]);
@@ -1094,7 +1118,75 @@
       ctx.fill();
     }
 
+    drawCampDetails();
+
     for (const tree of mapDecor.trees) drawTree(tree.x, tree.y, tree.r, tree.c);
+  }
+
+  function drawCampDetails() {
+    drawFlag(900, 545, "#dd4d4d");
+    drawFlag(1018, 244, "#2f70b8");
+    drawFlag(250, 555, "#f2b84b");
+    drawBench(730, 735);
+    drawBench(1060, 735);
+    drawCampfire(885, 870);
+  }
+
+  function drawFlag(x, y, color) {
+    ctx.fillStyle = "rgba(22,32,51,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(x + 16, y + 60, 28, 8, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#6c5845";
+    roundRect(x - 3, y, 6, 72, 3);
+    ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x + 3, y + 4);
+    ctx.lineTo(x + 58, y + 18);
+    ctx.lineTo(x + 3, y + 32);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawBench(x, y) {
+    ctx.fillStyle = "rgba(22,32,51,0.14)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 22, 52, 10, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = "#8a603e";
+    roundRect(x - 48, y, 96, 13, 6);
+    ctx.fill();
+    roundRect(x - 38, y + 18, 76, 10, 5);
+    ctx.fill();
+  }
+
+  function drawCampfire(x, y) {
+    ctx.fillStyle = "rgba(22,32,51,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 18, 48, 12, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = "#77533c";
+    ctx.lineWidth = 8;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - 26, y + 20);
+    ctx.lineTo(x + 26, y - 2);
+    ctx.moveTo(x + 26, y + 20);
+    ctx.lineTo(x - 26, y - 2);
+    ctx.stroke();
+    ctx.fillStyle = "#f2b84b";
+    ctx.beginPath();
+    ctx.moveTo(x, y - 38);
+    ctx.quadraticCurveTo(x + 24, y - 4, x, y + 10);
+    ctx.quadraticCurveTo(x - 24, y - 4, x, y - 38);
+    ctx.fill();
+    ctx.fillStyle = "#dd4d4d";
+    ctx.beginPath();
+    ctx.moveTo(x, y - 22);
+    ctx.quadraticCurveTo(x + 14, y + 0, x, y + 10);
+    ctx.quadraticCurveTo(x - 14, y + 0, x, y - 22);
+    ctx.fill();
   }
 
   function drawTree(x, y, r, color) {
@@ -1121,30 +1213,37 @@
       ctx.translate(station.x, station.y);
       ctx.fillStyle = "rgba(22,32,51,0.17)";
       ctx.beginPath();
-      ctx.ellipse(0, 32, 48, 13, 0, 0, TAU);
+      ctx.ellipse(0, 34, 46, 14, 0, 0, TAU);
       ctx.fill();
 
       if (pending || selected) {
         ctx.strokeStyle = selected ? "#ffffff" : station.color;
         ctx.lineWidth = selected ? 6 : 4;
         ctx.beginPath();
-        ctx.arc(0, 0, 52 + Math.sin(performance.now() * 0.006) * 4, 0, TAU);
+        ctx.arc(0, -2, 48 + Math.sin(performance.now() * 0.006) * 4, 0, TAU);
         ctx.stroke();
       }
 
-      ctx.fillStyle = station.color;
-      roundRect(-42, -34, 84, 68, 8);
-      ctx.fill();
-      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      const grad = ctx.createLinearGradient(-34, -46, 34, 40);
+      grad.addColorStop(0, "#fffaf1");
+      grad.addColorStop(1, "#e8ecf2");
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(0, -4, 18, 0, TAU);
+      ctx.arc(0, -2, 38, 0, TAU);
       ctx.fill();
-      ctx.fillStyle = station.color;
-      ctx.fillRect(-20, 19, 40, 8);
+      ctx.strokeStyle = station.color;
+      ctx.lineWidth = 7;
+      ctx.stroke();
+      drawStationIcon(station);
       ctx.fillStyle = "#162033";
       ctx.font = "900 12px Inter, system-ui";
       ctx.textAlign = "center";
-      ctx.fillText(station.name, 0, 55);
+      const labelWidth = Math.max(86, ctx.measureText(station.name).width + 18);
+      ctx.fillStyle = "rgba(255,250,241,0.92)";
+      roundRect(-labelWidth / 2, 47, labelWidth, 25, 8);
+      ctx.fill();
+      ctx.fillStyle = "#162033";
+      ctx.fillText(station.name, 0, 64);
       ctx.restore();
     }
 
@@ -1161,6 +1260,96 @@
       ctx.fillText("Espaco: interagir", 0, 3);
       ctx.restore();
     }
+  }
+
+  function drawStationIcon(station) {
+    ctx.save();
+    ctx.strokeStyle = station.color;
+    ctx.fillStyle = station.color;
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    if (station.id === "acampamento") {
+      ctx.beginPath();
+      ctx.moveTo(-21, 18);
+      ctx.lineTo(0, -20);
+      ctx.lineTo(23, 18);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -17);
+      ctx.lineTo(6, 18);
+      ctx.stroke();
+    } else if (station.id === "natureza") {
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 18, 27, 0.7, 0, TAU);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(-10, 13);
+      ctx.lineTo(13, -16);
+      ctx.stroke();
+    } else if (station.id === "nos") {
+      ctx.beginPath();
+      ctx.arc(-10, -2, 13, 0.2, TAU - 0.2);
+      ctx.arc(12, -2, 13, Math.PI + 0.2, Math.PI - 0.2);
+      ctx.stroke();
+    } else if (station.id === "socorro") {
+      roundRect(-18, -18, 36, 36, 8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -11);
+      ctx.lineTo(0, 11);
+      ctx.moveTo(-11, 0);
+      ctx.lineTo(11, 0);
+      ctx.stroke();
+    } else if (station.id === "mapa") {
+      ctx.beginPath();
+      ctx.arc(0, -2, 19, 0, TAU);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -22);
+      ctx.lineTo(8, -2);
+      ctx.lineTo(0, 18);
+      ctx.lineTo(-8, -2);
+      ctx.closePath();
+      ctx.fill();
+    } else if (station.id === "comunidade") {
+      ctx.beginPath();
+      ctx.moveTo(0, 18);
+      ctx.bezierCurveTo(-32, -4, -15, -28, 0, -10);
+      ctx.bezierCurveTo(15, -28, 32, -4, 0, 18);
+      ctx.fill();
+    } else if (station.id === "artes") {
+      ctx.beginPath();
+      ctx.moveTo(-17, 17);
+      ctx.lineTo(17, -17);
+      ctx.moveTo(-6, -20);
+      ctx.lineTo(20, 6);
+      ctx.stroke();
+    } else if (station.id === "lideranca") {
+      ctx.beginPath();
+      ctx.arc(0, -10, 9, 0, TAU);
+      ctx.moveTo(-18, 20);
+      ctx.quadraticCurveTo(0, 3, 18, 20);
+      ctx.stroke();
+    } else if (station.id === "portal") {
+      ctx.beginPath();
+      ctx.moveTo(0, -25);
+      ctx.lineTo(18, -2);
+      ctx.lineTo(8, 24);
+      ctx.lineTo(-10, 24);
+      ctx.lineTo(-18, -2);
+      ctx.closePath();
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(-18, -14);
+      ctx.lineTo(18, -14);
+      ctx.lineTo(0, 22);
+      ctx.closePath();
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawField() {
@@ -1211,20 +1400,39 @@
     ctx.save();
     ctx.translate(player.x, player.y);
     const bounce = Math.sin(player.step) * 2;
-    ctx.fillStyle = "rgba(22,32,51,0.18)";
+    ctx.fillStyle = "rgba(22,32,51,0.20)";
     ctx.beginPath();
-    ctx.ellipse(0, 24, 24, 8, 0, 0, TAU);
+    ctx.ellipse(0, 27, 25, 9, 0, 0, TAU);
     ctx.fill();
     ctx.translate(0, bounce);
     ctx.rotate(player.dir);
+
+    ctx.fillStyle = "#26334f";
+    ctx.beginPath();
+    ctx.moveTo(-12, 15);
+    ctx.lineTo(0, 30);
+    ctx.lineTo(12, 15);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.fillStyle = "#fffaf1";
     ctx.beginPath();
     ctx.arc(0, 0, player.r, 0, TAU);
     ctx.fill();
+
     ctx.fillStyle = "#2f70b8";
     ctx.beginPath();
     ctx.arc(0, 0, player.r - 5, 0.35, TAU - 0.35);
     ctx.fill();
+
+    ctx.fillStyle = "#dd4d4d";
+    ctx.beginPath();
+    ctx.moveTo(-10, 8);
+    ctx.lineTo(0, 22);
+    ctx.lineTo(10, 8);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.fillStyle = "#f2b84b";
     ctx.beginPath();
     ctx.moveTo(18, 0);
@@ -1232,6 +1440,13 @@
     ctx.lineTo(34, 7);
     ctx.closePath();
     ctx.fill();
+
+    ctx.strokeStyle = "rgba(22,32,51,0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.r, 0, TAU);
+    ctx.stroke();
+
     ctx.fillStyle = "#162033";
     ctx.beginPath();
     ctx.arc(8, -7, 3, 0, TAU);

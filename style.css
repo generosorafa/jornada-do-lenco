@@ -50,6 +50,18 @@ button {
   min-width: 0;
   height: 100vh;
   overflow: hidden;
+  background: #8fce95;
+}
+
+.game-stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    inset 0 0 90px rgba(22, 32, 51, 0.14);
+  pointer-events: none;
 }
 
 #game {
@@ -70,7 +82,7 @@ button {
   overflow: auto;
   border-left: 1px solid rgba(255, 255, 255, 0.46);
   background:
-    linear-gradient(rgba(255, 250, 241, 0.94), rgba(255, 250, 241, 0.88)),
+    linear-gradient(rgba(255, 250, 241, 0.96), rgba(255, 250, 241, 0.9)),
     linear-gradient(180deg, rgba(47, 112, 184, 0.12), rgba(242, 184, 75, 0.15));
   box-shadow: -20px 0 60px rgba(22, 32, 51, 0.12);
 }
@@ -151,6 +163,9 @@ h2 {
 .card-info > div {
   min-height: 72px;
   padding: 12px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(255, 250, 241, 0.72)),
+    radial-gradient(circle at 100% 0%, rgba(242, 184, 75, 0.16), transparent 44%);
 }
 
 .card-info span {
@@ -200,6 +215,7 @@ h2 {
 
 .pin.current {
   outline: 3px solid rgba(47, 112, 184, 0.24);
+  box-shadow: 0 0 0 6px rgba(47, 112, 184, 0.08);
 }
 
 .pin::after {
@@ -241,6 +257,16 @@ h2 {
   border: 1px solid rgba(22, 32, 51, 0.09);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.62);
+  transition:
+    transform 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.mission:not(.done):hover {
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 10px 20px rgba(22, 32, 51, 0.08);
+  transform: translateY(-1px);
 }
 
 .mission button {
@@ -252,6 +278,7 @@ h2 {
   cursor: pointer;
   font-size: 12px;
   font-weight: 900;
+  box-shadow: 0 6px 14px rgba(22, 32, 51, 0.14);
 }
 
 .mission button:disabled {
@@ -310,6 +337,7 @@ h2 {
 
 .timeline-row.current {
   background: rgba(47, 112, 184, 0.16);
+  box-shadow: inset 4px 0 0 var(--blue);
 }
 
 .timeline-row span {
@@ -364,6 +392,7 @@ h2 {
   min-height: 42px;
   padding: 11px 16px;
   border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
   background: rgba(38, 51, 79, 0.92);
   color: white;
   box-shadow: 0 16px 34px rgba(22, 32, 51, 0.2);
