@@ -867,6 +867,198 @@ h2 {
   color: white;
 }
 
+.creation-board,
+.match-board,
+.fire-board {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.day-list {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.day-list span {
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(22, 32, 51, 0.08);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.day-list span.current {
+  background: rgba(242, 184, 75, 0.34);
+  color: var(--ink);
+}
+
+.day-list span.done {
+  background: var(--green);
+  color: white;
+}
+
+.creation-choices,
+.match-answers,
+.fire-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.creation-choices button,
+.match-answers button,
+.fire-choices button {
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf1;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.creation-choices button.good,
+.match-answers button.good,
+.fire-choices button.good {
+  background: rgba(63, 158, 109, 0.9);
+  color: white;
+}
+
+.creation-choices button.bad,
+.match-answers button.bad,
+.fire-choices button.bad {
+  background: rgba(221, 77, 77, 0.84);
+  color: white;
+}
+
+.library-shelf {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(119, 83, 60, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(119, 83, 60, 0.18) 0 12px, transparent 12px 100%),
+    #dfc18a;
+}
+
+.library-shelf button {
+  min-height: 74px;
+  padding: 8px;
+  border-left: 6px solid var(--blue);
+  border-radius: 7px;
+  background: #fffaf1;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.library-shelf button.good {
+  border-left-color: var(--green);
+  background: rgba(63, 158, 109, 0.9);
+  color: white;
+}
+
+.library-shelf button.bad {
+  border-left-color: var(--red);
+  background: rgba(221, 77, 77, 0.16);
+}
+
+.match-board > strong {
+  display: block;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--night);
+  color: white;
+  text-align: center;
+  font-size: 18px;
+}
+
+.plate-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at center, rgba(255, 250, 241, 0.96) 0 34%, rgba(242, 184, 75, 0.28) 35% 36%, transparent 37%),
+    linear-gradient(135deg, rgba(66, 183, 173, 0.18), rgba(63, 158, 109, 0.16));
+}
+
+.plate-card {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.84);
+  cursor: pointer;
+  text-align: left;
+}
+
+.plate-card strong {
+  font-size: 13px;
+}
+
+.plate-card span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.plate-card.selected {
+  border-color: rgba(63, 158, 109, 0.54);
+  background: rgba(63, 158, 109, 0.18);
+}
+
+.fire-pit {
+  position: relative;
+  min-height: 154px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(47, 112, 184, 0.13), transparent 42%),
+    #75533c;
+}
+
+.fire-pit::before {
+  content: "";
+  position: absolute;
+  right: 20%;
+  bottom: 28px;
+  left: 20%;
+  height: 20px;
+  border-radius: 999px;
+  background: rgba(22, 32, 51, 0.3);
+}
+
+.fire-pit span {
+  position: absolute;
+  bottom: 34px;
+  left: 50%;
+  width: 54px;
+  height: 74px;
+  border-radius: 55% 55% 50% 50%;
+  background: linear-gradient(180deg, #fff5a8 0%, #f2b84b 38%, #dd4d4d 100%);
+  transform: translateX(-50%) scale(0.6);
+  transform-origin: 50% 100%;
+  transition: transform 180ms ease;
+}
+
 .rapel-wrap {
   position: relative;
   min-height: 230px;
@@ -1022,8 +1214,17 @@ h2 {
   .choice-grid,
   .card-info,
   .item-grid,
-  .safety-board {
+  .safety-board,
+  .library-shelf,
+  .plate-board,
+  .creation-choices,
+  .match-answers,
+  .fire-choices {
     grid-template-columns: 1fr;
+  }
+
+  .day-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .panel {

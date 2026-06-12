@@ -50,15 +50,39 @@
 
   const stages = [
     stage(10, "Amigo", "AM", "#2f70b8", [
-      seq("am-voto", "Voto e Lei", "Monte a sequencia dos valores que guiam o Desbravador.", "voto", ["Honrar", "Ajudar", "Cuidar", "Crescer"]),
-      backpack("am-mochila", "Mochila do Desbravador", "Monte uma mochila leve e util para uma reuniao com trilha curta.", "acampamento", 9),
-      rope("am-nos", "No inicial", "Guie a corda pelos pontos certos para fechar o no.", "nos", ["Ponta", "Volta", "Laco", "Aperto"]),
-      quiz("am-uniforme", "Preparar o uniforme", "Qual atitude combina com a investidura?", "conselheiro", "Cuidar do uniforme e respeitar o momento", ["Esconder o cartao", "Cuidar do uniforme e respeitar o momento", "Chegar sem estudar"]),
+      seq("am-voto", "Voto e Lei explicados", "Mostre que voce nao decorou apenas palavras: organize como um Amigo vive o Voto e a Lei.", "voto", ["Memorizar", "Explicar", "Viver", "Compartilhar"]),
+      creation("am-criacao", "Sete dias da Criacao", "Associe cada dia ao que Deus criou. Um erro faz a revisao voltar um passo.", "voto"),
+      library("am-antigo-testamento", "Estante do Antigo Testamento", "Encontre os primeiros livros do Antigo Testamento na ordem correta.", "conselheiro", ["Genesis", "Exodo", "Levitico", "Numeros", "Deuteronomio", "Josue", "Juizes", "Rute"], ["Ester", "Jo", "Salmos", "Mateus"]),
+      match("am-versos", "Versos na pratica", "Ligue cada referencia biblica ao sentido principal antes da classe biblica.", "voto", [
+        ["Joao 3:16", "Deus ama e salva"],
+        ["Efesios 6:1-3", "Honrar pai e mae"],
+        ["II Timoteo 3:16", "A Biblia ensina"],
+        ["Salmo 1", "Escolher bons caminhos"],
+      ]),
+      delivery("am-servico", "Duas horas de servico", "Leve 4 ajudas para a comunidade: alimento, visita, projeto e oracao.", "comunidade", 4),
+      match("am-civismo", "Amizade e civismo", "Conecte atitudes de amizade, Regra Aurea e Hino Nacional.", "comunidade", [
+        ["Regra Aurea", "Tratar como quero ser tratado"],
+        ["Bom amigo", "Ouve e ajuda"],
+        ["Letra do Hino Nacional", "Joaquim Osorio Duque-Estrada"],
+        ["Musica do Hino Nacional", "Francisco Manuel da Silva"],
+      ]),
+      plate("am-temperanca", "Prato de Daniel", "Monte um compromisso saudavel escolhendo alimentos e habitos que combinam com Daniel 1:8.", "socorro"),
+      rope("am-nos", "Nos da investidura", "Guie a corda pelos pontos certos para praticar nos uteis do cartao.", "nos", ["Simples", "Direito", "Lais", "Escota"]),
     ]),
     stage(10, "Amigo da Natureza", "AN", "#3f9e6d", [
-      collect("an-folhas", "Trilha das folhas", "Colete 5 marcas de observacao pela trilha.", "natureza", "folha", 5),
-      plant("an-plantar", "Jardim da unidade", "Plante 3 mudas ao redor do acampamento.", "natureza", 3),
-      tent("an-barraca", "Barraca em equipe", "Monte a barraca na ordem correta antes da noite chegar.", "acampamento"),
+      seq("an-hino", "Hino dos Desbravadores", "Prepare uma apresentacao do hino: memoria, respeito e historia.", "voto", ["Memorizar", "Cantar", "Conhecer historia", "Apresentar"]),
+      match("an-personagens", "Livramentos do Antigo Testamento", "Converse com o grupo relacionando cada personagem ao cuidado de Deus.", "voto", [
+        ["Jose", "Cuidado no Egito"],
+        ["Jonas", "Recomeco em Ninive"],
+        ["Ester", "Coragem pelo povo"],
+        ["Rute", "Fidelidade em familia"],
+      ]),
+      delivery("an-convidar", "Dois amigos no clube", "Leve 2 convites ate a tenda da comunidade para receber novos amigos.", "comunidade", 2),
+      safety("an-boas-maneiras", "Higiene e boas maneiras", "Marque atitudes corretas para reunioes, mesa e acampamentos.", "conselheiro", ["Lavar as maos", "Ouvir antes de falar", "Servir com respeito", "Mesa organizada", "Cuidar do ambiente"]),
+      tent("an-barraca", "Arte de acampar", "Monte a barraca na ordem correta, escolhendo lona, varetas, tecido, porta, nos e espeques.", "acampamento"),
+      collect("an-especies", "Flores e insetos da regiao", "Registre 10 especies pelo bosque para completar a observacao da natureza.", "natureza", "especie", 10),
+      fire("an-fogueira", "Fogueira de um fosforo", "Acenda uma fogueira segura com materiais naturais e mantenha a chama estavel.", "acampamento"),
+      safety("an-ferramentas", "Ferramentas com seguranca", "Escolha as regras certas para faca, facao e machadinha.", "natureza", ["Cortar para longe", "Base firme", "Area livre", "Guardar com capa", "Pedir supervisao"]),
     ]),
     stage(11, "Companheiro", "CP", "#dd4d4d", [
       seq("cp-voto", "Promessa em acao", "Organize uma atitude de companheirismo.", "voto", ["Ouvir", "Ajudar", "Animar", "Agradecer"]),
@@ -224,6 +248,55 @@
 
   function rapel(id, title, desc, station) {
     return { id, title, desc, station, kind: "rapel" };
+  }
+
+  function creation(id, title, desc, station) {
+    return {
+      id,
+      title,
+      desc,
+      station,
+      kind: "creation",
+      days: [
+        "Luz",
+        "Ceu e aguas",
+        "Terra, mares e plantas",
+        "Sol, lua e estrelas",
+        "Peixes e aves",
+        "Animais e pessoas",
+        "Descanso",
+      ],
+    };
+  }
+
+  function library(id, title, desc, station, books, extras) {
+    return { id, title, desc, station, kind: "library", books, extras };
+  }
+
+  function match(id, title, desc, station, pairs) {
+    return {
+      id,
+      title,
+      desc,
+      station,
+      kind: "match",
+      pairs: pairs.map(([prompt, answer]) => ({ prompt, answer })),
+    };
+  }
+
+  function plate(id, title, desc, station) {
+    return { id, title, desc, station, kind: "plate" };
+  }
+
+  function fire(id, title, desc, station) {
+    return {
+      id,
+      title,
+      desc,
+      station,
+      kind: "fire",
+      steps: ["Ninho seco", "Gravetos finos", "Lenha pequena", "Um fosforo", "Soprar leve", "Lenha maior"],
+    };
   }
 
   function collect(id, title, desc, station, token, needed) {
@@ -528,6 +601,11 @@
     if (mission.kind === "morse") openMorseMission(mission);
     if (mission.kind === "safety") openSafetyMission(mission);
     if (mission.kind === "rapel") openRapelMission(mission);
+    if (mission.kind === "creation") openCreationMission(mission);
+    if (mission.kind === "library") openLibraryMission(mission);
+    if (mission.kind === "match") openMatchMission(mission);
+    if (mission.kind === "plate") openPlateMission(mission);
+    if (mission.kind === "fire") openFireMission(mission);
   }
 
   function showDialog(mission, type) {
@@ -964,7 +1042,8 @@
     const selected = new Set();
     const board = document.createElement("div");
     board.className = "safety-board";
-    const labels = shuffle([...mission.targets, "Pressa", "Cortar para o corpo", "Ir sozinho", "Brincar com ferramenta"]).slice(0, 8);
+    const extras = shuffle(["Pressa", "Cortar para o corpo", "Ir sozinho", "Brincar com ferramenta", "Improvisar sem avisar"]);
+    const labels = shuffle([...mission.targets, ...extras.slice(0, Math.max(0, 8 - mission.targets.length))]);
     labels.forEach((label, index) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -1065,6 +1144,294 @@
     });
     ui.dialogBody.append(wrap, controls, feedback);
     updateRapel();
+  }
+
+  function openCreationMission(mission) {
+    showDialog(mission, "Mini-game da Criacao");
+    let current = 0;
+    const board = document.createElement("div");
+    board.className = "creation-board";
+    const dayList = document.createElement("div");
+    dayList.className = "day-list";
+    const choices = document.createElement("div");
+    choices.className = "creation-choices";
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+
+    function renderDays(message, tone) {
+      dayList.innerHTML = "";
+      mission.days.forEach((label, index) => {
+        const item = document.createElement("span");
+        item.textContent = `Dia ${index + 1}`;
+        item.classList.toggle("done", index < current);
+        item.classList.toggle("current", index === current);
+        dayList.appendChild(item);
+      });
+      feedback.textContent = message || (current < mission.days.length ? `Escolha o que pertence ao Dia ${current + 1}.` : "Criacao revisada.");
+      feedback.className = tone || "mini-feedback";
+    }
+
+    const buttons = shuffle(mission.days).map((label) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (label === mission.days[current]) {
+          button.classList.add("good");
+          button.disabled = true;
+          current += 1;
+          playSound("click");
+          renderDays();
+          if (current >= mission.days.length) {
+            completeMission(mission.id);
+            setTimeout(() => ui.dialog.close(), 850);
+          }
+          return;
+        }
+        current = Math.max(0, current - 1);
+        playSound("error");
+        buttons.forEach((item) => {
+          if (mission.days.indexOf(item.textContent) >= current) {
+            item.disabled = false;
+            item.classList.remove("good");
+          }
+        });
+        renderDays("Revise com calma: esse dia nao combina. Volte um passo.", "mini-feedback bad");
+      });
+      choices.appendChild(button);
+      return button;
+    });
+
+    board.append(dayList, choices);
+    ui.dialogBody.append(board, feedback);
+    renderDays();
+  }
+
+  function openLibraryMission(mission) {
+    showDialog(mission, "Mini-game de biblioteca biblica");
+    let current = 0;
+    const shelf = document.createElement("div");
+    shelf.className = "library-shelf";
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+    const labels = shuffle([...mission.books, ...mission.extras]);
+
+    function updateShelf() {
+      feedback.textContent = `Procure agora: ${mission.books[current] || "estante completa"}.`;
+    }
+
+    labels.forEach((label) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (label === mission.books[current]) {
+          button.classList.add("good");
+          button.disabled = true;
+          current += 1;
+          feedback.className = "mini-feedback good";
+          playSound("click");
+          updateShelf();
+          if (current >= mission.books.length) {
+            completeMission(mission.id);
+            setTimeout(() => ui.dialog.close(), 850);
+          }
+          return;
+        }
+        feedback.textContent = "Livro fora da ordem. Encontre o proximo livro indicado.";
+        feedback.className = "mini-feedback bad";
+        button.classList.add("bad");
+        playSound("error");
+      });
+      shelf.appendChild(button);
+    });
+
+    ui.dialogBody.append(shelf, feedback);
+    updateShelf();
+  }
+
+  function openMatchMission(mission) {
+    showDialog(mission, "Mini-game de associacao");
+    let current = 0;
+    const board = document.createElement("div");
+    board.className = "match-board";
+    const prompt = document.createElement("strong");
+    const progress = document.createElement("div");
+    progress.className = "progress-bar";
+    const fill = document.createElement("span");
+    fill.className = "progress-fill";
+    progress.appendChild(fill);
+    const answers = document.createElement("div");
+    answers.className = "match-answers";
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+
+    function renderMatch() {
+      const pair = mission.pairs[current];
+      prompt.textContent = pair ? pair.prompt : "Tudo associado.";
+      fill.style.width = `${(current / mission.pairs.length) * 100}%`;
+      feedback.textContent = `${current}/${mission.pairs.length} associacoes corretas.`;
+      answers.querySelectorAll("button").forEach((button) => {
+        button.disabled = false;
+        button.classList.remove("bad");
+      });
+    }
+
+    shuffle(mission.pairs.map((pair) => pair.answer)).forEach((answer) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = answer;
+      button.addEventListener("click", () => {
+        if (answer === mission.pairs[current].answer) {
+          current += 1;
+          feedback.className = "mini-feedback good";
+          playSound("click");
+          if (current >= mission.pairs.length) {
+            fill.style.width = "100%";
+            completeMission(mission.id);
+            setTimeout(() => ui.dialog.close(), 850);
+          } else {
+            renderMatch();
+          }
+          return;
+        }
+        button.classList.add("bad");
+        feedback.textContent = "Ainda nao. Pense no significado e tente outra associacao.";
+        feedback.className = "mini-feedback bad";
+        playSound("error");
+      });
+      answers.appendChild(button);
+    });
+
+    board.append(prompt, progress, answers, feedback);
+    ui.dialogBody.append(board);
+    renderMatch();
+  }
+
+  function openPlateMission(mission) {
+    showDialog(mission, "Mini-game de saude");
+    const items = [
+      { name: "Agua", group: "Hidratacao", good: true },
+      { name: "Frutas", group: "Vitaminas", good: true },
+      { name: "Verduras", group: "Protecao", good: true },
+      { name: "Graos integrais", group: "Energia", good: true },
+      { name: "Feijao", group: "Forca", good: true },
+      { name: "Refrigerante", group: "Trocar", good: false },
+      { name: "Fritura pesada", group: "Excesso", good: false },
+      { name: "Doce sem limite", group: "Excesso", good: false },
+    ];
+    const neededGroups = new Set(items.filter((item) => item.good).map((item) => item.group));
+    const selected = new Set();
+    const board = document.createElement("div");
+    board.className = "plate-board";
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+    feedback.textContent = "Escolha um item de cada grupo saudavel para montar o compromisso.";
+
+    shuffle(items).forEach((item) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "plate-card";
+      button.innerHTML = `<strong>${item.name}</strong><span>${item.group}</span>`;
+      button.addEventListener("click", () => {
+        if (selected.has(item.name)) {
+          selected.delete(item.name);
+          button.classList.remove("selected");
+        } else {
+          selected.add(item.name);
+          button.classList.add("selected");
+        }
+        playSound("click");
+      });
+      board.appendChild(button);
+    });
+
+    const check = document.createElement("button");
+    check.type = "button";
+    check.className = "wide-action";
+    check.textContent = "Conferir compromisso";
+    check.addEventListener("click", () => {
+      const selectedItems = items.filter((item) => selected.has(item.name));
+      const hasBad = selectedItems.some((item) => !item.good);
+      const groups = new Set(selectedItems.map((item) => item.group));
+      const hasAll = Array.from(neededGroups).every((group) => groups.has(group));
+      if (hasBad || !hasAll || selectedItems.length !== neededGroups.size) {
+        feedback.textContent = "O compromisso precisa ser equilibrado, simples e sem excessos.";
+        feedback.className = "mini-feedback bad";
+        playSound("error");
+        return;
+      }
+      feedback.textContent = "Compromisso saudavel pronto para Daniel 1:8.";
+      feedback.className = "mini-feedback good";
+      completeMission(mission.id);
+      setTimeout(() => ui.dialog.close(), 850);
+    });
+
+    ui.dialogBody.append(board, feedback, check);
+  }
+
+  function openFireMission(mission) {
+    showDialog(mission, "Mini-game de fogueira");
+    let current = 0;
+    let heat = 8;
+    const board = document.createElement("div");
+    board.className = "fire-board";
+    const pit = document.createElement("div");
+    pit.className = "fire-pit";
+    const flame = document.createElement("span");
+    pit.appendChild(flame);
+    const meter = document.createElement("div");
+    meter.className = "progress-bar";
+    const fill = document.createElement("span");
+    fill.className = "progress-fill";
+    meter.appendChild(fill);
+    const choices = document.createElement("div");
+    choices.className = "fire-choices";
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+    const labels = shuffle([...mission.steps, "Folha verde", "Alcool", "Vento forte", "Papel molhado"]);
+
+    function syncFire(message, tone) {
+      heat = clamp(heat, 0, 100);
+      fill.style.width = `${heat}%`;
+      flame.style.transform = `translateX(-50%) scale(${0.55 + heat / 100})`;
+      feedback.textContent = message || `Proximo passo: ${mission.steps[current] || "fogueira segura"}.`;
+      feedback.className = tone || "mini-feedback";
+      choices.querySelectorAll("button").forEach((button) => {
+        const stepIndex = mission.steps.indexOf(button.textContent);
+        button.disabled = stepIndex >= 0 && stepIndex < current;
+        button.classList.toggle("good", stepIndex >= 0 && stepIndex < current);
+      });
+    }
+
+    labels.forEach((label) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        if (label === mission.steps[current]) {
+          current += 1;
+          heat += 16;
+          feedback.className = "mini-feedback good";
+          playSound("plant");
+          syncFire();
+          if (current >= mission.steps.length) {
+            completeMission(mission.id);
+            setTimeout(() => ui.dialog.close(), 950);
+          }
+          return;
+        }
+        current = Math.max(0, current - 1);
+        heat -= 18;
+        playSound("error");
+        syncFire("Isso apaga ou deixa inseguro. Corrija a sequencia.", "mini-feedback bad");
+      });
+      choices.appendChild(button);
+    });
+
+    board.append(pit, meter, choices);
+    ui.dialogBody.append(board, feedback);
+    syncFire();
   }
 
   function openFieldIntro(mission) {
