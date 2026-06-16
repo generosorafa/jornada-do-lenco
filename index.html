@@ -56,6 +56,7 @@
           <div>
             <p class="eyebrow">Modo Historia</p>
             <h1>Jornada do Lenco</h1>
+            <p class="profile-line" id="profileLine">Perfil ainda nao criado</p>
           </div>
         </header>
 
@@ -103,6 +104,42 @@
           <div id="dialogBody" class="dialog-body"></div>
           <div class="dialog-actions">
             <button type="button" id="dialogPrimary">Comecar</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="profileDialog" class="dialog profile-dialog">
+        <form class="dialog-card">
+          <p class="eyebrow">Comece sua jornada</p>
+          <h2>Quem vai vestir o lenco?</h2>
+          <div class="profile-form">
+            <div>
+              <span>Voce e...</span>
+              <div class="segmented" role="group" aria-label="Tipo de participante">
+                <button type="button" data-profile-role="Desbravador">Desbravador</button>
+                <button type="button" data-profile-role="Desbravadora">Desbravadora</button>
+              </div>
+            </div>
+            <label>
+              <span>Seu nome</span>
+              <input id="profileName" type="text" maxlength="24" autocomplete="given-name" placeholder="Ex.: Rafael" />
+            </label>
+            <div>
+              <span>Voce faz parte de algum clube?</span>
+              <div class="segmented" role="group" aria-label="Situacao no clube">
+                <button type="button" data-club-status="member">Faco parte</button>
+                <button type="button" data-club-status="none">Ainda nao</button>
+                <button type="button" data-club-status="unsure">Nao sei</button>
+              </div>
+            </div>
+            <label>
+              <span>Nome do clube, se souber</span>
+              <input id="profileClubName" type="text" maxlength="32" placeholder="Ex.: Clube Aurora" />
+            </label>
+            <p class="mini-feedback" id="profileFeedback">Essas respostas deixam a historia com a sua cara.</p>
+          </div>
+          <div class="dialog-actions">
+            <button type="button" id="profileStart">Comecar jornada</button>
           </div>
         </form>
       </dialog>

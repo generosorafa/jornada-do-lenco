@@ -26,6 +26,14 @@
     storyNext: document.getElementById("storyNext"),
     storySkip: document.getElementById("storySkip"),
     sound: document.getElementById("soundBtn"),
+    profileLine: document.getElementById("profileLine"),
+    profileDialog: document.getElementById("profileDialog"),
+    profileName: document.getElementById("profileName"),
+    profileClubName: document.getElementById("profileClubName"),
+    profileStart: document.getElementById("profileStart"),
+    profileFeedback: document.getElementById("profileFeedback"),
+    profileRoleButtons: Array.from(document.querySelectorAll("[data-profile-role]")),
+    clubStatusButtons: Array.from(document.querySelectorAll("[data-club-status]")),
   };
 
   const TAU = Math.PI * 2;
@@ -164,6 +172,12 @@
     storyIndex: 0,
     storySeen: false,
     sound: false,
+    profile: {
+      role: "",
+      name: "",
+      clubStatus: "unsure",
+      clubName: "",
+    },
   };
 
   let lastTime = performance.now();
@@ -406,6 +420,32 @@
     }
   }
 
+  function defaultProfile() {
+    return {
+      role: "",
+      name: "",
+      clubStatus: "unsure",
+      clubName: "",
+    };
+  }
+
+  function isProfileComplete() {
+    return Boolean(state.profile.role && state.profile.name.trim());
+  }
+
+  function profileClubLabel() {
+    if (state.profile.clubStatus === "member") {
+      return state.profile.clubName.trim() ? state.profile.clubName.trim() : "clube informado";
+    }
+    if (state.profile.clubStatus === "none") return "ainda sem clube";
+    return "clube a descobrir";
+  }
+
+  function isStageReadyForInvestiture() {
+    const stageNow = currentStage();
+    return stageNow.missions.every(isMissionDone) && !state.awarded[stageNow.name];
+  }
+
   function load() {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
@@ -416,6 +456,7 @@
       state.awarded = saved.awarded || {};
       state.storySeen = Boolean(saved.storySeen);
       state.sound = Boolean(saved.sound);
+      state.profile = { ...defaultProfile(), ...(saved.profile || {}) };
     } catch (error) {
       localStorage.removeItem(SAVE_KEY);
     }
@@ -430,6 +471,7 @@
         awarded: state.awarded,
         storySeen: state.storySeen,
         sound: state.sound,
+        profile: state.profile,
       }),
     );
   }
@@ -444,11 +486,13 @@
     state.selectedMissionId = null;
     state.storyIndex = 0;
     state.storySeen = false;
+    state.profile = defaultProfile();
     player.x = 900;
     player.y = 650;
     save();
     renderUi();
     renderStory();
+    showProfileDialog();
     showToast("Novo jogo iniciado. Fale com o conselheiro ou escolha uma missao do cartao.", 3);
   }
 
@@ -459,6 +503,10 @@
   }
 
   function renderStory() {
+    if (!isProfileComplete()) {
+      ui.storyCard.classList.add("hidden");
+      return;
+    }
     if (state.storySeen) {
       ui.storyCard.classList.add("hidden");
       return;
@@ -475,6 +523,48 @@
     ui.storyCard.classList.add("hidden");
     save();
     showToast("Primeira missao: complete Voto e Lei ou fale com o Conselheiro.", 3);
+  }
+
+  function renderProfileControls() {
+    ui.profileRoleButtons.forEach((button) => {
+      button.classList.toggle("selected", button.dataset.profileRole === state.profile.role);
+    });
+    ui.clubStatusButtons.forEach((button) => {
+      button.classList.toggle("selected", button.dataset.clubStatus === state.profile.clubStatus);
+    });
+  }
+
+  function showProfileDialog() {
+    ui.profileName.value = state.profile.name || "";
+    ui.profileClubName.value = state.profile.clubName || "";
+    renderProfileControls();
+    ui.profileFeedback.textContent = "Essas respostas deixam a historia com a sua cara.";
+    ui.profileFeedback.className = "mini-feedback";
+    if (!ui.profileDialog.open) ui.profileDialog.showModal();
+  }
+
+  function submitProfile() {
+    const name = ui.profileName.value.trim().replace(/\s+/g, " ").slice(0, 24);
+    if (!state.profile.role) {
+      ui.profileFeedback.textContent = "Escolha Desbravador ou Desbravadora para comecar.";
+      ui.profileFeedback.className = "mini-feedback bad";
+      playSound("error");
+      return;
+    }
+    if (!name) {
+      ui.profileFeedback.textContent = "Digite o nome de quem vai viver a jornada.";
+      ui.profileFeedback.className = "mini-feedback bad";
+      playSound("error");
+      return;
+    }
+    state.profile.name = name;
+    state.profile.clubName = ui.profileClubName.value.trim().replace(/\s+/g, " ").slice(0, 32);
+    save();
+    renderUi();
+    renderStory();
+    ui.profileDialog.close();
+    playSound("pin");
+    showToast(`${state.profile.name}, sua jornada de ${state.profile.role} comecou.`, 3.2);
   }
 
   function initAudio() {
@@ -523,10 +613,15 @@
   function renderUi() {
     const stageNow = currentStage();
     const doneCount = stageNow.missions.filter(isMissionDone).length;
+    const readyForInvestiture = isStageReadyForInvestiture();
+    const profileName = state.profile.name.trim();
     ui.age.textContent = stageNow.age;
     ui.className.textContent = stageNow.name;
     ui.progress.textContent = `${doneCount}/${stageNow.missions.length}`;
     ui.sound.textContent = `Som: ${state.sound ? "on" : "off"}`;
+    ui.profileLine.textContent = isProfileComplete()
+      ? `${state.profile.role} ${profileName} - ${profileClubLabel()}`
+      : "Perfil ainda nao criado";
 
     ui.pinBoard.innerHTML = "";
     stages.forEach((item, index) => {
@@ -536,10 +631,29 @@
       pin.dataset.title = item.name;
       if (state.awarded[item.name]) pin.classList.add("done");
       if (index === state.stageIndex) pin.classList.add("current");
+      if (index === state.stageIndex && readyForInvestiture) pin.classList.add("ready");
       ui.pinBoard.appendChild(pin);
     });
 
     ui.missions.innerHTML = "";
+    if (readyForInvestiture) {
+      const call = document.createElement("article");
+      call.className = "investiture-call";
+      const title = document.createElement("strong");
+      title.textContent = `${stageNow.name} pronto para investidura`;
+      const copy = document.createElement("p");
+      copy.textContent = "Va ao portal de Investidura para receber o PIN e aceitar continuar crescendo.";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Ir ao portal";
+      button.addEventListener("click", () => {
+        player.x = stationMap.portal.x;
+        player.y = stationMap.portal.y + 42;
+        showToast("Aperte Espaco no portal para a cerimonia.", 2.4);
+      });
+      call.append(title, copy, button);
+      ui.missions.appendChild(call);
+    }
     stageNow.missions.forEach((mission) => {
       const row = document.createElement("article");
       row.className = `mission ${isMissionDone(mission) ? "done" : ""}`;
@@ -579,6 +693,10 @@
   }
 
   function openMission(id) {
+    if (!isProfileComplete()) {
+      showProfileDialog();
+      return;
+    }
     const mission = currentMissions().find((item) => item.id === id);
     if (!mission || isMissionDone(mission)) return;
     if (!state.storySeen) {
@@ -1514,23 +1632,63 @@
     if (!stageNow.missions.every(isMissionDone)) return;
     if (state.awarded[stageNow.name]) return;
 
+    player.x = stationMap.portal.x;
+    player.y = stationMap.portal.y + 42;
+    showToast(`${stageNow.name} completo. Va ao portal para sua investidura.`, 4.2);
+  }
+
+  function openInvestitureCeremony() {
+    const stageNow = currentStage();
+    if (!isStageReadyForInvestiture()) {
+      showToast("Complete todos os requisitos do cartao antes da investidura.", 2.4);
+      return;
+    }
+    showDialog({ title: `Investidura de ${stageNow.name}`, desc: "" }, "Cerimonia de PIN");
+    ui.dialogIntro.textContent = `${state.profile.name || "Desbravador"}, seu cartao esta completo. Voce aceita continuar crescendo, aprendendo e servindo com alegria?`;
+    const ceremony = document.createElement("div");
+    ceremony.className = "ceremony";
+    const pin = document.createElement("div");
+    pin.className = "ceremony-pin";
+    pin.textContent = stageNow.pin;
+    const message = document.createElement("p");
+    const next = stages[state.stageIndex + 1];
+    message.textContent = next
+      ? `Parabens, ${state.profile.name || "jogador"}. Ao receber o PIN ${stageNow.pin}, voce libera ${next.name}.`
+      : `Parabens, ${state.profile.name || "jogador"}. Voce concluiu todas as classes desta jornada.`;
+    ceremony.append(pin, message);
+    ui.dialogBody.append(ceremony);
+    ui.dialogPrimary.textContent = "Aceito continuar";
+    ui.dialogPrimary.onclick = () => awardCurrentPin();
+  }
+
+  function awardCurrentPin() {
+    const stageNow = currentStage();
+    if (!isStageReadyForInvestiture()) {
+      ui.dialog.close();
+      return;
+    }
     state.awarded[stageNow.name] = true;
     playSound("pin");
     const isLast = state.stageIndex === stages.length - 1;
     if (isLast) {
+      save();
+      renderUi();
+      ui.dialog.close();
       showToast("Voce completou todas as Classes dos Desbravadores!", 6);
       return;
     }
-
     const previousAge = stageNow.age;
     state.stageIndex += 1;
     const next = currentStage();
     player.x = stationMap.portal.x;
-    player.y = stationMap.portal.y + 96;
+    player.y = stationMap.portal.y + 42;
+    save();
+    renderUi();
+    ui.dialog.close();
     if (next.age > previousAge) {
-      showToast(`PIN de ${stageNow.name} conquistado. Voce subiu para ${next.age} anos!`, 4.6);
+      showToast(`PIN de ${stageNow.name} recebido. Voce subiu para ${next.age} anos!`, 4.6);
     } else {
-      showToast(`PIN de ${stageNow.name} conquistado. Classe avancada liberada!`, 4.2);
+      showToast(`PIN de ${stageNow.name} recebido. Classe avancada liberada!`, 4.2);
     }
   }
 
@@ -1663,6 +1821,10 @@
     const station = nearestStation();
     if (!station) {
       showToast("Aproxime-se de uma estacao ou escolha uma missao no cartao.", 1.9);
+      return;
+    }
+    if (station.id === "portal" && isStageReadyForInvestiture()) {
+      openInvestitureCeremony();
       return;
     }
     const mission = currentMissions().find((item) => item.station === station.id && !isMissionDone(item));
@@ -1887,8 +2049,9 @@
   function drawStations() {
     const stageNow = currentStage();
     const pendingStations = new Set(stageNow.missions.filter((mission) => !isMissionDone(mission)).map((mission) => mission.station));
+    const readyForInvestiture = isStageReadyForInvestiture();
     for (const station of stations) {
-      const pending = pendingStations.has(station.id);
+      const pending = pendingStations.has(station.id) || (readyForInvestiture && station.id === "portal");
       const selected = state.selectedMissionId && currentMissions().find((mission) => mission.id === state.selectedMissionId)?.station === station.id;
       ctx.save();
       ctx.translate(station.x, station.y + Math.sin(performance.now() * 0.0018 + station.x * 0.01) * 2);
@@ -2237,6 +2400,33 @@
       playSound("click");
       closeStory();
     });
+    ui.profileRoleButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.profile.role = button.dataset.profileRole;
+        renderProfileControls();
+        playSound("click");
+      });
+    });
+    ui.clubStatusButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        state.profile.clubStatus = button.dataset.clubStatus;
+        renderProfileControls();
+        playSound("click");
+      });
+    });
+    ui.profileStart.addEventListener("click", submitProfile);
+    ui.profileName.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitProfile();
+      }
+    });
+    ui.profileClubName.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        submitProfile();
+      }
+    });
     ui.touchInteract.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       interact();
@@ -2258,6 +2448,7 @@
   renderUi();
   renderStory();
   bindEvents();
+  if (!isProfileComplete()) showProfileDialog();
   showToast("Bem-vindo ao Clube. Complete o cartao e conquiste seus PINs.", 3.2);
   requestAnimationFrame(frame);
 })();
