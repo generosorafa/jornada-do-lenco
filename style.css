@@ -283,6 +283,12 @@ h2 {
   transform: translateY(-1px);
 }
 
+.mission.selected {
+  border-color: rgba(47, 112, 184, 0.42);
+  background: rgba(255, 250, 241, 0.94);
+  box-shadow: inset 4px 0 0 var(--blue), 0 10px 20px rgba(22, 32, 51, 0.08);
+}
+
 .mission button {
   min-height: 34px;
   padding: 0 10px;

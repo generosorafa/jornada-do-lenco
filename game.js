@@ -390,6 +390,52 @@
     return Boolean(state.completed[mission.id]);
   }
 
+  function pendingMissions() {
+    return currentMissions().filter((mission) => !isMissionDone(mission));
+  }
+
+  function focusedMission() {
+    if (isStageReadyForInvestiture()) {
+      return { id: "investiture", title: "Investidura", station: "portal" };
+    }
+    const selected = currentMissions().find((mission) => mission.id === state.selectedMissionId);
+    if (selected && !isMissionDone(selected)) return selected;
+    return pendingMissions()[0] || null;
+  }
+
+  function pendingStationIds() {
+    const ids = new Set(pendingMissions().map((mission) => mission.station));
+    if (isStageReadyForInvestiture()) ids.add("portal");
+    return ids;
+  }
+
+  function pathForStation(stationId) {
+    return mapDecor.paths.find((path) => path[4] === stationId);
+  }
+
+  function pathControlPoint(path) {
+    return {
+      x: (path[0] + path[2]) * 0.5,
+      y: (path[1] + path[3]) * 0.5 + (path[5] || 30),
+    };
+  }
+
+  function pathPoint(path, t) {
+    const c = pathControlPoint(path);
+    const inv = 1 - t;
+    return {
+      x: inv * inv * path[0] + 2 * inv * t * c.x + t * t * path[2],
+      y: inv * inv * path[1] + 2 * inv * t * c.y + t * t * path[3],
+    };
+  }
+
+  function drawPathCurve(path) {
+    const c = pathControlPoint(path);
+    ctx.beginPath();
+    ctx.moveTo(path[0], path[1]);
+    ctx.quadraticCurveTo(c.x, c.y, path[2], path[3]);
+  }
+
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.getBoundingClientRect();
@@ -404,17 +450,9 @@
     mapDecor.flowers.length = 0;
     mapDecor.rocks.length = 0;
     mapDecor.npcs.length = 0;
-    mapDecor.paths = [
-      [900, 650, 520, 390],
-      [900, 650, 1280, 395],
-      [900, 650, 410, 850],
-      [900, 650, 1370, 845],
-      [900, 650, 870, 995],
-      [900, 650, 1040, 260],
-      [900, 650, 240, 565],
-      [900, 650, 1540, 580],
-      [900, 650, 910, 125],
-    ];
+    mapDecor.paths = stations
+      .filter((station) => station.id !== "conselheiro")
+      .map((station, index) => [900, 650, station.x, station.y, station.id, index % 2 === 0 ? 34 : -28]);
     for (let i = 0; i < 85; i += 1) {
       const x = between(80, WORLD.w - 80);
       const y = between(80, WORLD.h - 80);
@@ -684,6 +722,7 @@
     stageNow.missions.forEach((mission) => {
       const row = document.createElement("article");
       row.className = `mission ${isMissionDone(mission) ? "done" : ""}`;
+      if (state.selectedMissionId === mission.id && !isMissionDone(mission)) row.classList.add("selected");
       const status = document.createElement("div");
       status.className = "mission-status";
       status.textContent = isMissionDone(mission) ? "✓" : "•";
@@ -733,6 +772,7 @@
     }
     state.selectedMissionId = id;
     state.activeMissionId = id;
+    renderUi();
     if (mission.kind === "collect" || mission.kind === "plant" || mission.kind === "delivery") {
       openFieldIntro(mission);
       return;
@@ -1867,11 +1907,13 @@
     ctx.save();
     ctx.translate(-camera.x, -camera.y);
     drawGround();
+    drawStationZones();
     drawPaths();
     drawDecor();
     drawStations();
     drawNpcs();
     drawField();
+    drawDestinationPointer();
     drawPlayer();
     ctx.restore();
     drawMapHud();
@@ -1920,25 +1962,101 @@
     ctx.stroke();
   }
 
+  function drawStationZones() {
+    const pending = pendingStationIds();
+    const focus = focusedMission();
+    ctx.save();
+    for (const station of stations) {
+      const isFocus = focus?.station === station.id;
+      const isPending = pending.has(station.id);
+      const rx = station.id === "portal" ? 96 : 132;
+      const ry = station.id === "portal" ? 58 : 74;
+      ctx.save();
+      ctx.translate(station.x, station.y);
+      ctx.rotate((station.x + station.y) * 0.0009);
+      ctx.globalAlpha = isFocus ? 0.18 : isPending ? 0.11 : 0.055;
+      ctx.fillStyle = station.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 8, rx, ry, 0, 0, TAU);
+      ctx.fill();
+      ctx.globalAlpha = isFocus ? 0.36 : 0.16;
+      ctx.strokeStyle = station.color;
+      ctx.lineWidth = isFocus ? 5 : 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 8, rx + 6, ry + 4, 0, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
   function drawPaths() {
+    const pending = pendingStationIds();
+    const focus = focusedMission();
+    const focusPath = focus ? pathForStation(focus.station) : null;
     ctx.save();
     ctx.strokeStyle = "rgba(85, 78, 54, 0.12)";
     ctx.lineWidth = 34;
     ctx.lineCap = "round";
     for (const path of mapDecor.paths) {
-      ctx.beginPath();
-      ctx.moveTo(path[0], path[1]);
-      ctx.quadraticCurveTo((path[0] + path[2]) * 0.5, (path[1] + path[3]) * 0.5 + 30, path[2], path[3]);
+      drawPathCurve(path);
       ctx.stroke();
     }
     ctx.strokeStyle = "rgba(213, 180, 98, 0.34)";
     ctx.lineWidth = 18;
     for (const path of mapDecor.paths) {
-      ctx.beginPath();
-      ctx.moveTo(path[0], path[1]);
-      ctx.quadraticCurveTo((path[0] + path[2]) * 0.5, (path[1] + path[3]) * 0.5 + 30, path[2], path[3]);
+      drawPathCurve(path);
       ctx.stroke();
     }
+
+    ctx.lineWidth = 9;
+    for (const path of mapDecor.paths) {
+      if (!pending.has(path[4]) || path === focusPath) continue;
+      const station = stationMap[path[4]];
+      ctx.globalAlpha = 0.42;
+      ctx.strokeStyle = station.color;
+      drawPathCurve(path);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    if (focusPath) {
+      const station = stationMap[focusPath[4]];
+      ctx.strokeStyle = station.color;
+      ctx.lineWidth = 24;
+      ctx.globalAlpha = 0.18;
+      drawPathCurve(focusPath);
+      ctx.stroke();
+      ctx.globalAlpha = 0.94;
+      ctx.lineWidth = 7;
+      ctx.setLineDash([22, 15]);
+      ctx.lineDashOffset = -performance.now() * 0.035;
+      drawPathCurve(focusPath);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      for (const t of [0.42, 0.64, 0.86]) drawPathChevron(focusPath, t, station.color);
+    }
+    ctx.restore();
+  }
+
+  function drawPathChevron(path, t, color) {
+    const p = pathPoint(path, t);
+    const ahead = pathPoint(path, Math.min(1, t + 0.025));
+    const angle = Math.atan2(ahead.y - p.y, ahead.x - p.x);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(angle);
+    ctx.fillStyle = color;
+    ctx.strokeStyle = "rgba(255,250,241,0.88)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(12, 0);
+    ctx.lineTo(-9, -8);
+    ctx.lineTo(-3, 0);
+    ctx.lineTo(-9, 8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -2106,15 +2224,22 @@
 
     const near = nearestStation();
     if (near) {
+      const focus = focusedMission();
+      const cta = near.id === "portal" && isStageReadyForInvestiture()
+        ? "Receber PIN"
+        : focus?.station === near.id
+          ? "Espaco: iniciar"
+          : "Espaco: interagir";
       ctx.save();
       ctx.translate(near.x, near.y - 80);
       ctx.fillStyle = "rgba(22,32,51,0.86)";
-      roundRect(-62, -19, 124, 34, 8);
+      ctx.font = "900 13px Inter, system-ui";
+      const bubbleW = Math.max(124, ctx.measureText(cta).width + 28);
+      roundRect(-bubbleW / 2, -19, bubbleW, 34, 8);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "900 13px Inter, system-ui";
       ctx.textAlign = "center";
-      ctx.fillText("Espaco: interagir", 0, 3);
+      ctx.fillText(cta, 0, 3);
       ctx.restore();
     }
   }
@@ -2399,6 +2524,38 @@
     }
   }
 
+  function drawDestinationPointer() {
+    const focus = focusedMission();
+    if (!focus) return;
+    const station = stationMap[focus.station];
+    if (!station) return;
+    const dx = station.x - player.x;
+    const dy = station.y - player.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 145) return;
+    const angle = Math.atan2(dy, dx);
+    const pulse = Math.sin(performance.now() * 0.006) * 3;
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(angle);
+    ctx.fillStyle = "rgba(22,32,51,0.18)";
+    ctx.beginPath();
+    ctx.ellipse(60 + pulse, 0, 22, 12, 0, 0, TAU);
+    ctx.fill();
+    ctx.fillStyle = station.color;
+    ctx.strokeStyle = "#fffaf1";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(75 + pulse, 0);
+    ctx.lineTo(47 + pulse, -16);
+    ctx.lineTo(55 + pulse, 0);
+    ctx.lineTo(47 + pulse, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
   function drawPlayer() {
     ctx.save();
     ctx.translate(player.x, player.y);
@@ -2417,20 +2574,35 @@
   function drawMapHud() {
     const stageNow = currentStage();
     const field = state.field;
+    const focus = focusedMission();
+    const focusStation = focus ? stationMap[focus.station] : null;
     ctx.save();
     ctx.fillStyle = "rgba(255,250,241,0.86)";
-    roundRect(16, 16, 260, 82, 8);
+    roundRect(16, 16, 312, field ? 116 : 101, 8);
     ctx.fill();
+    ctx.strokeStyle = "rgba(22,32,51,0.08)";
+    ctx.lineWidth = 2;
+    roundRect(16, 16, 312, field ? 116 : 101, 8);
+    ctx.stroke();
     ctx.fillStyle = "#162033";
     ctx.font = "900 18px Inter, system-ui";
     ctx.fillText(stageNow.name, 30, 44);
     ctx.fillStyle = "#637083";
     ctx.font = "800 13px Inter, system-ui";
     ctx.fillText(`Idade ${stageNow.age} anos`, 30, 67);
+    if (focusStation) {
+      ctx.fillStyle = focusStation.color;
+      ctx.beginPath();
+      ctx.arc(35, 89, 6, 0, TAU);
+      ctx.fill();
+      ctx.fillStyle = "#26334f";
+      ctx.font = "900 13px Inter, system-ui";
+      ctx.fillText(`Destino: ${focusStation.name}`, 50, 93);
+    }
     if (field) {
       ctx.fillStyle = "#2f70b8";
       ctx.font = "900 13px Inter, system-ui";
-      ctx.fillText(`Missao: ${field.count}/${field.needed}`, 30, 88);
+      ctx.fillText(`Missao: ${field.count}/${field.needed}`, 30, 116);
     }
     ctx.restore();
   }
