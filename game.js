@@ -160,7 +160,7 @@
   const keys = new Set();
   const pointer = { x: 0, y: 0 };
   const camera = { x: 0, y: 0 };
-  const player = { x: 900, y: 650, vx: 0, vy: 0, r: 22, dir: 0, step: 0 };
+  const player = { x: 900, y: 650, vx: 0, vy: 0, r: 22, dir: 0, step: 0, moving: false };
   const state = {
     stageIndex: 0,
     completed: {},
@@ -1766,22 +1766,25 @@
     }
 
     const input = getInput();
-    const speed = 235;
+    const speed = 180;
+    const acceleration = 760;
     if (input.x || input.y) {
-      player.vx += input.x * speed * 5 * dt;
-      player.vy += input.y * speed * 5 * dt;
+      player.vx += input.x * acceleration * dt;
+      player.vy += input.y * acceleration * dt;
       player.dir = Math.atan2(input.y, input.x);
-      player.step += dt * 9;
     }
     const mag = Math.hypot(player.vx, player.vy);
     if (mag > speed) {
       player.vx = (player.vx / mag) * speed;
       player.vy = (player.vy / mag) * speed;
     }
+    player.moving = mag > 18;
+    if (player.moving) player.step += dt * clamp(mag / 30, 3.2, 6.2);
     player.x = clamp(player.x + player.vx * dt, 34, WORLD.w - 34);
     player.y = clamp(player.y + player.vy * dt, 34, WORLD.h - 34);
-    player.vx *= Math.pow(0.05, dt);
-    player.vy *= Math.pow(0.05, dt);
+    const drag = input.x || input.y ? 0.09 : 0.025;
+    player.vx *= Math.pow(drag, dt);
+    player.vy *= Math.pow(drag, dt);
 
     updateFieldMission();
     updateNpcs(dt);
@@ -2316,10 +2319,32 @@
     });
   }
 
-  function getPlayerSprite() {
-    return getSprite("player:default:v1", 92, 92, (target, width, height) => {
+  function getPlayerSprite(frame, moving) {
+    const frameKey = moving ? frame : "idle";
+    return getSprite(`player:v2:${frameKey}`, 92, 92, (target, width, height) => {
+      const phase = moving ? Math.sin((frame / 4) * TAU) : 0;
+      const counter = moving ? Math.cos((frame / 4) * TAU) : 0;
       target.save();
       target.translate(width / 2, height / 2);
+
+      target.strokeStyle = "#26334f";
+      target.lineWidth = 6;
+      target.lineCap = "round";
+      target.beginPath();
+      target.moveTo(-9, 15);
+      target.lineTo(-17 - phase * 4, 30 + counter * 2);
+      target.moveTo(9, 15);
+      target.lineTo(17 + phase * 4, 30 - counter * 2);
+      target.stroke();
+
+      target.strokeStyle = "#f2b84b";
+      target.lineWidth = 5;
+      target.beginPath();
+      target.moveTo(-13, 4);
+      target.lineTo(-28, 13 + phase * 4);
+      target.moveTo(13, 4);
+      target.lineTo(27, 13 - phase * 4);
+      target.stroke();
 
       target.fillStyle = "#26334f";
       target.beginPath();
@@ -2342,6 +2367,11 @@
       target.arc(0, 1, 18, 0.35, TAU - 0.35);
       target.fill();
 
+      target.fillStyle = "rgba(255,255,255,0.18)";
+      target.beginPath();
+      target.arc(-8, -8, 8, 0, TAU);
+      target.fill();
+
       target.fillStyle = "#dd4d4d";
       target.beginPath();
       target.moveTo(-11, 8);
@@ -2350,11 +2380,19 @@
       target.closePath();
       target.fill();
 
+      target.fillStyle = "#fffaf1";
+      target.beginPath();
+      target.moveTo(16, -4);
+      target.lineTo(38, -13);
+      target.lineTo(38, 13);
+      target.closePath();
+      target.fill();
+
       target.fillStyle = "#f2b84b";
       target.beginPath();
-      target.moveTo(19, 0);
-      target.lineTo(38, -8);
-      target.lineTo(38, 8);
+      target.moveTo(20, -1);
+      target.lineTo(34, -7);
+      target.lineTo(34, 7);
       target.closePath();
       target.fill();
 
@@ -2369,10 +2407,11 @@
       target.arc(8, -8, 3, 0, TAU);
       target.fill();
 
-      target.fillStyle = "rgba(255,255,255,0.25)";
+      target.strokeStyle = "rgba(22,32,51,0.32)";
+      target.lineWidth = 2;
       target.beginPath();
-      target.arc(-8, -11, 7, 0, TAU);
-      target.fill();
+      target.arc(11, 4, 4, 0.15, Math.PI - 0.15);
+      target.stroke();
       target.restore();
     });
   }
@@ -2559,15 +2598,18 @@
   function drawPlayer() {
     ctx.save();
     ctx.translate(player.x, player.y);
-    const bounce = Math.sin(player.step) * 2;
+    const velocity = Math.hypot(player.vx, player.vy);
+    const moving = velocity > 22;
+    const frame = moving ? Math.floor(player.step) % 4 : 0;
+    const bounce = moving ? Math.sin(player.step * 0.85) * 2 : Math.sin(performance.now() * 0.0025) * 0.7;
     ctx.fillStyle = "rgba(22,32,51,0.20)";
     ctx.beginPath();
-    ctx.ellipse(0, 27, 25, 9, 0, 0, TAU);
+    ctx.ellipse(0, 27, moving ? 27 : 24, moving ? 9 : 8, 0, 0, TAU);
     ctx.fill();
     ctx.translate(0, bounce);
     ctx.rotate(player.dir);
 
-    drawSpriteCentered(getPlayerSprite(), 0, 0);
+    drawSpriteCentered(getPlayerSprite(frame, moving), 0, 0);
     ctx.restore();
   }
 
