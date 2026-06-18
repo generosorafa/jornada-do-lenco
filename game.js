@@ -183,6 +183,7 @@
   let lastTime = performance.now();
   let seed = 45619;
   let audioCtx = null;
+  const spriteCache = new Map();
 
   const storySteps = [
     {
@@ -349,6 +350,32 @@
       [copy[i], copy[j]] = [copy[j], copy[i]];
     }
     return copy;
+  }
+
+  function roundRectOn(target, x, y, w, h, r) {
+    const rr = Math.min(r, w * 0.5, h * 0.5);
+    target.beginPath();
+    target.moveTo(x + rr, y);
+    target.arcTo(x + w, y, x + w, y + h, rr);
+    target.arcTo(x + w, y + h, x, y + h, rr);
+    target.arcTo(x, y + h, x, y, rr);
+    target.arcTo(x, y, x + w, y, rr);
+    target.closePath();
+  }
+
+  function getSprite(key, width, height, drawSprite) {
+    if (spriteCache.has(key)) return spriteCache.get(key);
+    const sprite = document.createElement("canvas");
+    sprite.width = width;
+    sprite.height = height;
+    const target = sprite.getContext("2d");
+    drawSprite(target, width, height);
+    spriteCache.set(key, sprite);
+    return sprite;
+  }
+
+  function drawSpriteCentered(sprite, x, y) {
+    ctx.drawImage(sprite, x - sprite.width / 2, y - sprite.height / 2);
   }
 
   function currentStage() {
@@ -2055,10 +2082,6 @@
       const selected = state.selectedMissionId && currentMissions().find((mission) => mission.id === state.selectedMissionId)?.station === station.id;
       ctx.save();
       ctx.translate(station.x, station.y + Math.sin(performance.now() * 0.0018 + station.x * 0.01) * 2);
-      ctx.fillStyle = "rgba(22,32,51,0.17)";
-      ctx.beginPath();
-      ctx.ellipse(0, 34, 46, 14, 0, 0, TAU);
-      ctx.fill();
 
       if (pending || selected) {
         ctx.strokeStyle = selected ? "#ffffff" : station.color;
@@ -2068,17 +2091,7 @@
         ctx.stroke();
       }
 
-      const grad = ctx.createLinearGradient(-34, -46, 34, 40);
-      grad.addColorStop(0, "#fffaf1");
-      grad.addColorStop(1, "#e8ecf2");
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(0, -2, 38, 0, TAU);
-      ctx.fill();
-      ctx.strokeStyle = station.color;
-      ctx.lineWidth = 7;
-      ctx.stroke();
-      drawStationIcon(station);
+      drawSpriteCentered(getStationSprite(station), 0, 0);
       ctx.fillStyle = "#162033";
       ctx.font = "900 12px Inter, system-ui";
       ctx.textAlign = "center";
@@ -2106,94 +2119,227 @@
     }
   }
 
-  function drawStationIcon(station) {
-    ctx.save();
-    ctx.strokeStyle = station.color;
-    ctx.fillStyle = station.color;
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
+  function getStationSprite(station) {
+    return getSprite(`station:${station.id}:${station.color}`, 116, 116, (target, width, height) => {
+      target.save();
+      target.translate(width / 2, height / 2);
+      target.fillStyle = "rgba(22,32,51,0.18)";
+      target.beginPath();
+      target.ellipse(0, 34, 46, 14, 0, 0, TAU);
+      target.fill();
+
+      const glow = target.createRadialGradient(-12, -18, 6, 0, -2, 54);
+      glow.addColorStop(0, "rgba(255,255,255,0.95)");
+      glow.addColorStop(0.56, "rgba(255,250,241,0.92)");
+      glow.addColorStop(1, "rgba(232,236,242,0.9)");
+      target.fillStyle = glow;
+      target.beginPath();
+      target.arc(0, -2, 39, 0, TAU);
+      target.fill();
+
+      target.strokeStyle = "rgba(255,255,255,0.8)";
+      target.lineWidth = 3;
+      target.beginPath();
+      target.arc(0, -2, 42, 0, TAU);
+      target.stroke();
+
+      target.strokeStyle = station.color;
+      target.lineWidth = 7;
+      target.beginPath();
+      target.arc(0, -2, 36, 0, TAU);
+      target.stroke();
+
+      drawStationIcon(station, target);
+      target.restore();
+    });
+  }
+
+  function getNpcSprite(color, radius) {
+    const size = Math.round(radius);
+    return getSprite(`npc:${color}:${size}`, 58, 68, (target, width, height) => {
+      target.save();
+      target.translate(width / 2, height / 2 + 2);
+      target.fillStyle = "#fffaf1";
+      target.beginPath();
+      target.arc(0, -radius * 0.72, radius * 0.82, 0, TAU);
+      target.fill();
+
+      target.fillStyle = color;
+      target.beginPath();
+      target.arc(0, radius * 0.14, radius * 1.05, 0, TAU);
+      target.fill();
+
+      target.fillStyle = "rgba(255,255,255,0.16)";
+      target.beginPath();
+      target.arc(-radius * 0.35, -radius * 0.05, radius * 0.45, 0, TAU);
+      target.fill();
+
+      target.fillStyle = "#26334f";
+      target.beginPath();
+      target.moveTo(-radius * 0.58, radius * 0.02);
+      target.lineTo(0, radius * 0.82);
+      target.lineTo(radius * 0.58, radius * 0.02);
+      target.closePath();
+      target.fill();
+
+      target.fillStyle = "#162033";
+      target.beginPath();
+      target.arc(-4, -radius * 0.82, 1.8, 0, TAU);
+      target.arc(4, -radius * 0.82, 1.8, 0, TAU);
+      target.fill();
+      target.restore();
+    });
+  }
+
+  function getPlayerSprite() {
+    return getSprite("player:default:v1", 92, 92, (target, width, height) => {
+      target.save();
+      target.translate(width / 2, height / 2);
+
+      target.fillStyle = "#26334f";
+      target.beginPath();
+      target.moveTo(-16, 14);
+      target.lineTo(0, 34);
+      target.lineTo(16, 14);
+      target.closePath();
+      target.fill();
+
+      target.fillStyle = "#fffaf1";
+      target.beginPath();
+      target.arc(0, 0, 23, 0, TAU);
+      target.fill();
+
+      const uniform = target.createLinearGradient(-18, -18, 18, 20);
+      uniform.addColorStop(0, "#4f91d8");
+      uniform.addColorStop(1, "#1f5f9f");
+      target.fillStyle = uniform;
+      target.beginPath();
+      target.arc(0, 1, 18, 0.35, TAU - 0.35);
+      target.fill();
+
+      target.fillStyle = "#dd4d4d";
+      target.beginPath();
+      target.moveTo(-11, 8);
+      target.lineTo(0, 24);
+      target.lineTo(11, 8);
+      target.closePath();
+      target.fill();
+
+      target.fillStyle = "#f2b84b";
+      target.beginPath();
+      target.moveTo(19, 0);
+      target.lineTo(38, -8);
+      target.lineTo(38, 8);
+      target.closePath();
+      target.fill();
+
+      target.strokeStyle = "rgba(22,32,51,0.25)";
+      target.lineWidth = 2;
+      target.beginPath();
+      target.arc(0, 0, 23, 0, TAU);
+      target.stroke();
+
+      target.fillStyle = "#162033";
+      target.beginPath();
+      target.arc(8, -8, 3, 0, TAU);
+      target.fill();
+
+      target.fillStyle = "rgba(255,255,255,0.25)";
+      target.beginPath();
+      target.arc(-8, -11, 7, 0, TAU);
+      target.fill();
+      target.restore();
+    });
+  }
+
+  function drawStationIcon(station, target = ctx) {
+    target.save();
+    target.strokeStyle = station.color;
+    target.fillStyle = station.color;
+    target.lineWidth = 5;
+    target.lineCap = "round";
+    target.lineJoin = "round";
     if (station.id === "acampamento") {
-      ctx.beginPath();
-      ctx.moveTo(-21, 18);
-      ctx.lineTo(0, -20);
-      ctx.lineTo(23, 18);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, -17);
-      ctx.lineTo(6, 18);
-      ctx.stroke();
+      target.beginPath();
+      target.moveTo(-21, 18);
+      target.lineTo(0, -20);
+      target.lineTo(23, 18);
+      target.closePath();
+      target.stroke();
+      target.beginPath();
+      target.moveTo(0, -17);
+      target.lineTo(6, 18);
+      target.stroke();
     } else if (station.id === "natureza") {
-      ctx.beginPath();
-      ctx.ellipse(0, -2, 18, 27, 0.7, 0, TAU);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(-10, 13);
-      ctx.lineTo(13, -16);
-      ctx.stroke();
+      target.beginPath();
+      target.ellipse(0, -2, 18, 27, 0.7, 0, TAU);
+      target.stroke();
+      target.beginPath();
+      target.moveTo(-10, 13);
+      target.lineTo(13, -16);
+      target.stroke();
     } else if (station.id === "nos") {
-      ctx.beginPath();
-      ctx.arc(-10, -2, 13, 0.2, TAU - 0.2);
-      ctx.arc(12, -2, 13, Math.PI + 0.2, Math.PI - 0.2);
-      ctx.stroke();
+      target.beginPath();
+      target.arc(-10, -2, 13, 0.2, TAU - 0.2);
+      target.arc(12, -2, 13, Math.PI + 0.2, Math.PI - 0.2);
+      target.stroke();
     } else if (station.id === "socorro") {
-      roundRect(-18, -18, 36, 36, 8);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, -11);
-      ctx.lineTo(0, 11);
-      ctx.moveTo(-11, 0);
-      ctx.lineTo(11, 0);
-      ctx.stroke();
+      roundRectOn(target, -18, -18, 36, 36, 8);
+      target.stroke();
+      target.beginPath();
+      target.moveTo(0, -11);
+      target.lineTo(0, 11);
+      target.moveTo(-11, 0);
+      target.lineTo(11, 0);
+      target.stroke();
     } else if (station.id === "mapa") {
-      ctx.beginPath();
-      ctx.arc(0, -2, 19, 0, TAU);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(0, -22);
-      ctx.lineTo(8, -2);
-      ctx.lineTo(0, 18);
-      ctx.lineTo(-8, -2);
-      ctx.closePath();
-      ctx.fill();
+      target.beginPath();
+      target.arc(0, -2, 19, 0, TAU);
+      target.stroke();
+      target.beginPath();
+      target.moveTo(0, -22);
+      target.lineTo(8, -2);
+      target.lineTo(0, 18);
+      target.lineTo(-8, -2);
+      target.closePath();
+      target.fill();
     } else if (station.id === "comunidade") {
-      ctx.beginPath();
-      ctx.moveTo(0, 18);
-      ctx.bezierCurveTo(-32, -4, -15, -28, 0, -10);
-      ctx.bezierCurveTo(15, -28, 32, -4, 0, 18);
-      ctx.fill();
+      target.beginPath();
+      target.moveTo(0, 18);
+      target.bezierCurveTo(-32, -4, -15, -28, 0, -10);
+      target.bezierCurveTo(15, -28, 32, -4, 0, 18);
+      target.fill();
     } else if (station.id === "artes") {
-      ctx.beginPath();
-      ctx.moveTo(-17, 17);
-      ctx.lineTo(17, -17);
-      ctx.moveTo(-6, -20);
-      ctx.lineTo(20, 6);
-      ctx.stroke();
+      target.beginPath();
+      target.moveTo(-17, 17);
+      target.lineTo(17, -17);
+      target.moveTo(-6, -20);
+      target.lineTo(20, 6);
+      target.stroke();
     } else if (station.id === "lideranca") {
-      ctx.beginPath();
-      ctx.arc(0, -10, 9, 0, TAU);
-      ctx.moveTo(-18, 20);
-      ctx.quadraticCurveTo(0, 3, 18, 20);
-      ctx.stroke();
+      target.beginPath();
+      target.arc(0, -10, 9, 0, TAU);
+      target.moveTo(-18, 20);
+      target.quadraticCurveTo(0, 3, 18, 20);
+      target.stroke();
     } else if (station.id === "portal") {
-      ctx.beginPath();
-      ctx.moveTo(0, -25);
-      ctx.lineTo(18, -2);
-      ctx.lineTo(8, 24);
-      ctx.lineTo(-10, 24);
-      ctx.lineTo(-18, -2);
-      ctx.closePath();
-      ctx.stroke();
+      target.beginPath();
+      target.moveTo(0, -25);
+      target.lineTo(18, -2);
+      target.lineTo(8, 24);
+      target.lineTo(-10, 24);
+      target.lineTo(-18, -2);
+      target.closePath();
+      target.stroke();
     } else {
-      ctx.beginPath();
-      ctx.moveTo(-18, -14);
-      ctx.lineTo(18, -14);
-      ctx.lineTo(0, 22);
-      ctx.closePath();
-      ctx.stroke();
+      target.beginPath();
+      target.moveTo(-18, -14);
+      target.lineTo(18, -14);
+      target.lineTo(0, 22);
+      target.closePath();
+      target.stroke();
     }
-    ctx.restore();
+    target.restore();
   }
 
   function drawField() {
@@ -2243,31 +2389,12 @@
   function drawNpcs() {
     for (const npc of mapDecor.npcs) {
       ctx.save();
-      ctx.translate(npc.x, npc.y + Math.sin(npc.t * 4) * 1.5);
       ctx.fillStyle = "rgba(22,32,51,0.16)";
       ctx.beginPath();
-      ctx.ellipse(0, npc.r + 9, npc.r * 1.2, 5, 0, 0, TAU);
+      ctx.ellipse(npc.x, npc.y + npc.r + 9, npc.r * 1.2, 5, 0, 0, TAU);
       ctx.fill();
-      ctx.fillStyle = "#fffaf1";
-      ctx.beginPath();
-      ctx.arc(0, -npc.r * 0.55, npc.r * 0.82, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = npc.c;
-      ctx.beginPath();
-      ctx.arc(0, npc.r * 0.28, npc.r, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = "#26334f";
-      ctx.beginPath();
-      ctx.moveTo(-npc.r * 0.5, npc.r * 0.15);
-      ctx.lineTo(0, npc.r * 0.74);
-      ctx.lineTo(npc.r * 0.5, npc.r * 0.15);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#162033";
-      ctx.beginPath();
-      ctx.arc(-4, -npc.r * 0.63, 1.8, 0, TAU);
-      ctx.arc(4, -npc.r * 0.63, 1.8, 0, TAU);
-      ctx.fill();
+      ctx.translate(npc.x, npc.y + Math.sin(npc.t * 4) * 1.5);
+      drawSpriteCentered(getNpcSprite(npc.c, npc.r), 0, 0);
       ctx.restore();
     }
   }
@@ -2283,50 +2410,7 @@
     ctx.translate(0, bounce);
     ctx.rotate(player.dir);
 
-    ctx.fillStyle = "#26334f";
-    ctx.beginPath();
-    ctx.moveTo(-12, 15);
-    ctx.lineTo(0, 30);
-    ctx.lineTo(12, 15);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#fffaf1";
-    ctx.beginPath();
-    ctx.arc(0, 0, player.r, 0, TAU);
-    ctx.fill();
-
-    ctx.fillStyle = "#2f70b8";
-    ctx.beginPath();
-    ctx.arc(0, 0, player.r - 5, 0.35, TAU - 0.35);
-    ctx.fill();
-
-    ctx.fillStyle = "#dd4d4d";
-    ctx.beginPath();
-    ctx.moveTo(-10, 8);
-    ctx.lineTo(0, 22);
-    ctx.lineTo(10, 8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#f2b84b";
-    ctx.beginPath();
-    ctx.moveTo(18, 0);
-    ctx.lineTo(34, -7);
-    ctx.lineTo(34, 7);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = "rgba(22,32,51,0.22)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, player.r, 0, TAU);
-    ctx.stroke();
-
-    ctx.fillStyle = "#162033";
-    ctx.beginPath();
-    ctx.arc(8, -7, 3, 0, TAU);
-    ctx.fill();
+    drawSpriteCentered(getPlayerSprite(), 0, 0);
     ctx.restore();
   }
 
@@ -2352,14 +2436,7 @@
   }
 
   function roundRect(x, y, w, h, r) {
-    const rr = Math.min(r, w * 0.5, h * 0.5);
-    ctx.beginPath();
-    ctx.moveTo(x + rr, y);
-    ctx.arcTo(x + w, y, x + w, y + h, rr);
-    ctx.arcTo(x + w, y + h, x, y + h, rr);
-    ctx.arcTo(x, y + h, x, y, rr);
-    ctx.arcTo(x, y, x + w, y, rr);
-    ctx.closePath();
+    roundRectOn(ctx, x, y, w, h, r);
   }
 
   function frame(now) {
