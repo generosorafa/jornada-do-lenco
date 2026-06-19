@@ -538,6 +538,7 @@ h2 {
 
 .dialog-card {
   position: relative;
+  overflow: hidden;
   padding: 20px;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 8px;
@@ -700,6 +701,90 @@ h2 {
   }
 }
 
+@keyframes popGood {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shakeBad {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  70% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes dialogGood {
+  0%,
+  100% {
+    box-shadow: 0 24px 80px rgba(22, 32, 51, 0.25);
+  }
+  50% {
+    box-shadow: 0 24px 80px rgba(63, 158, 109, 0.34);
+  }
+}
+
+@keyframes dialogBad {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  70% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes completeRise {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  18%,
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+@keyframes sparkBurst {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--spark-x)), calc(-50% + var(--spark-y))) scale(0.2);
+  }
+}
+
+@keyframes progressShine {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -746,12 +831,22 @@ h2 {
 }
 
 .progress-fill {
+  position: relative;
+  overflow: hidden;
   display: block;
   width: 0;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--blue), var(--green));
   transition: width 180ms ease;
+}
+
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: progressShine 1.4s linear infinite;
 }
 
 .bag-meter {
@@ -825,6 +920,56 @@ h2 {
 .mini-feedback.bad {
   background: rgba(221, 77, 77, 0.13);
   color: #9e3535;
+}
+
+.fx-pop {
+  animation: popGood 360ms ease;
+}
+
+.fx-miss {
+  animation: shakeBad 360ms ease;
+}
+
+.dialog-card.fx-good {
+  animation: dialogGood 420ms ease;
+}
+
+.dialog-card.fx-bad {
+  animation: dialogBad 420ms ease;
+}
+
+.mission-complete-fx {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid rgba(63, 158, 109, 0.35);
+  border-radius: 8px;
+  background: rgba(63, 158, 109, 0.13);
+  color: #1f6d49;
+  text-align: center;
+  animation: completeRise 1.2s ease both;
+}
+
+.mission-complete-fx strong {
+  font-size: 15px;
+}
+
+.mission-complete-fx span {
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.mission-complete-fx i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: sparkBurst 820ms ease-out both;
 }
 
 .rope-wrap {
@@ -1265,6 +1410,126 @@ h2 {
   height: 28px;
   border-radius: 8px;
   background: var(--blue);
+}
+
+.compass-game {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.compass-readout {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(47, 112, 184, 0.1);
+  color: var(--ink);
+  text-align: center;
+}
+
+.compass-dial {
+  position: relative;
+  width: min(260px, 70vw);
+  aspect-ratio: 1;
+  border: 10px solid #fffaf1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fffaf1 0 9%, transparent 10%),
+    conic-gradient(from -8deg, rgba(47, 112, 184, 0.16), rgba(242, 184, 75, 0.2), rgba(63, 158, 109, 0.15), rgba(47, 112, 184, 0.16)),
+    #e7ddcc;
+  box-shadow:
+    inset 0 0 0 2px rgba(22, 32, 51, 0.1),
+    0 16px 30px rgba(22, 32, 51, 0.14);
+}
+
+.compass-dial::before {
+  content: "";
+  position: absolute;
+  inset: 22px;
+  border: 1px dashed rgba(22, 32, 51, 0.18);
+  border-radius: 50%;
+}
+
+.compass-label {
+  position: absolute;
+  color: var(--night);
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.compass-label.n {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.compass-label.e {
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+}
+
+.compass-label.s {
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.compass-label.w {
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+}
+
+.compass-needle,
+.compass-target {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 42%;
+  border-radius: 999px 999px 3px 3px;
+  transform-origin: 50% 100%;
+  transition: transform 130ms ease;
+}
+
+.compass-needle {
+  background: linear-gradient(180deg, var(--red), var(--blue));
+  box-shadow: 0 5px 12px rgba(22, 32, 51, 0.18);
+}
+
+.compass-target {
+  width: 18px;
+  background: rgba(242, 184, 75, 0.38);
+  outline: 2px solid rgba(242, 184, 75, 0.78);
+}
+
+.compass-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  border: 5px solid var(--night);
+  border-radius: 50%;
+  background: #fffaf1;
+  transform: translate(-50%, -50%);
+}
+
+.compass-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.compass-controls button {
+  min-height: 42px;
+  border-radius: 8px;
+  background: var(--night);
+  color: white;
+  cursor: pointer;
+  font-weight: 900;
 }
 
 .mobile-controls {

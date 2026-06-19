@@ -104,7 +104,7 @@
     ]),
     stage(12, "Pesquisador", "PS", "#42b7ad", [
       collect("ps-pistas", "Campo de pesquisa", "Colete 5 pistas de plantas, pegadas e pedras.", "natureza", "pista", 5),
-      quiz("ps-anotar", "Caderno de campo", "Como registrar uma descoberta?", "natureza", "Anotar local, data e observacao", ["So guardar na memoria", "Anotar local, data e observacao", "Chutar o nome"]),
+      seq("ps-anotar", "Caderno de campo", "Monte um registro completo de descoberta, como em uma pesquisa de campo.", "natureza", ["Local", "Data", "Observacao", "Compartilhar"]),
       seq("ps-estudo", "Pesquisa em ordem", "Monte o metodo de pesquisa.", "artes", ["Observar", "Comparar", "Anotar", "Compartilhar"]),
     ]),
     stage(12, "Pesquisador de Campo e Bosque", "PB", "#3f9e6d", [
@@ -115,7 +115,7 @@
     stage(13, "Pioneiro", "PN", "#f2b84b", [
       seq("pn-ponte", "Ponte pioneira", "Siga a sequencia para erguer uma pequena ponte.", "nos", ["Base", "Amarra", "Teste", "Passagem"]),
       delivery("pn-equipe", "Equipe em acao", "Distribua 4 ferramentas para a area de pioneirias.", "artes", 4),
-      quiz("pn-liderar", "Liderar sem mandar", "Um bom pioneiro primeiro...", "lideranca", "Serve junto com a unidade", ["Some na hora dificil", "Serve junto com a unidade", "Grita para parecer forte"]),
+      seq("pn-liderar", "Liderar sem mandar", "Organize a atitude de um pioneiro que lidera servindo junto.", "lideranca", ["Ouvir", "Servir", "Orientar", "Celebrar"]),
     ]),
     stage(13, "Pioneiro de Novas Fronteiras", "PF", "#c27c3c", [
       seq("pf-rota", "Abrir caminho", "Planeje a nova rota do acampamento.", "mapa", ["Mapa", "Risco", "Equipe", "Partida"]),
@@ -123,7 +123,12 @@
       kit("pf-ferramentas", "Ferramentas certas", "Escolha ferramentas seguras para construir.", "artes", ["Corda", "Luva", "Estaca"]),
     ]),
     stage(14, "Excursionista", "EX", "#8c67c6", [
-      collect("ex-bussola", "Bussola em movimento", "Encontre 6 pontos cardeais no mapa.", "mapa", "ponto", 6),
+      compass("ex-bussola", "Bussola em movimento", "Gire a bussola e trave os rumos corretos para orientar a unidade.", "mapa", [
+        ["Norte", 0],
+        ["Leste", 90],
+        ["Sul", 180],
+        ["Oeste", 270],
+      ]),
       kit("ex-emergencia", "Plano de emergencia", "Escolha atitudes certas para uma surpresa na trilha.", "socorro", ["Parar", "Avisar", "Aguardar"]),
       rapel("ex-rapel", "Rapel controlado", "Controle a descida: devagar, com freio e sem passar do limite.", "acampamento"),
     ]),
@@ -135,12 +140,12 @@
     stage(15, "Guia", "GU", "#26334f", [
       seq("gu-unidade", "Guiar a unidade", "Organize a resposta de um lider servidor.", "lideranca", ["Perceber", "Orientar", "Acompanhar", "Celebrar"]),
       delivery("gu-resgate", "Resgate da unidade", "Leve 4 kits de apoio aos colegas no mapa.", "socorro", 4),
-      quiz("gu-exemplo", "Ser exemplo", "Um guia influencia melhor quando...", "lideranca", "Vive o que ensina", ["So cobra dos outros", "Vive o que ensina", "Desiste quando e dificil"]),
+      kit("gu-exemplo", "Ser exemplo", "Escolha atitudes que fazem um Guia influenciar pelo exemplo.", "lideranca", ["Vive o que ensina", "Acompanha a unidade", "Corrige com respeito"]),
     ]),
     stage(15, "Guia de Exploracao", "GX", "#f2b84b", [
       collect("gx-campori", "Campori final", "Colete 7 insignias da grande jornada.", "portal", "insignia", 7),
       seq("gx-cerimonia", "Preparar investidura", "Organize a cerimonia final.", "portal", ["Cartao", "Unidade", "PIN", "Gratidao"]),
-      quiz("gx-final", "Todas as classes", "Ao concluir a jornada, o proximo passo e...", "portal", "Continuar servindo e aprendendo", ["Parar de crescer", "Continuar servindo e aprendendo", "Guardar tudo so para si"]),
+      seq("gx-final", "Todas as classes", "Organize o proximo passo depois de concluir a jornada.", "portal", ["Agradecer", "Servir", "Aprender", "Ensinar"]),
     ]),
   ];
 
@@ -263,6 +268,10 @@
 
   function rapel(id, title, desc, station) {
     return { id, title, desc, station, kind: "rapel" };
+  }
+
+  function compass(id, title, desc, station, bearings) {
+    return { id, title, desc, station, kind: "compass", bearings };
   }
 
   function creation(id, title, desc, station) {
@@ -786,6 +795,7 @@
     if (mission.kind === "morse") openMorseMission(mission);
     if (mission.kind === "safety") openSafetyMission(mission);
     if (mission.kind === "rapel") openRapelMission(mission);
+    if (mission.kind === "compass") openCompassMission(mission);
     if (mission.kind === "creation") openCreationMission(mission);
     if (mission.kind === "library") openLibraryMission(mission);
     if (mission.kind === "match") openMatchMission(mission);
@@ -801,6 +811,44 @@
     ui.dialogPrimary.textContent = "Fechar";
     ui.dialogPrimary.onclick = () => ui.dialog.close();
     if (!ui.dialog.open) ui.dialog.showModal();
+  }
+
+  function flashDialog(tone) {
+    const card = ui.dialog.querySelector(".dialog-card");
+    if (!card) return;
+    const className = tone === "bad" ? "fx-bad" : "fx-good";
+    card.classList.remove("fx-good", "fx-bad");
+    void card.offsetWidth;
+    card.classList.add(className);
+    setTimeout(() => card.classList.remove(className), 420);
+  }
+
+  function popAction(element, good = true) {
+    if (!element) return;
+    element.classList.remove("fx-pop", "fx-miss");
+    void element.offsetWidth;
+    element.classList.add(good ? "fx-pop" : "fx-miss");
+    setTimeout(() => element.classList.remove("fx-pop", "fx-miss"), 420);
+  }
+
+  function showCompletionFx() {
+    if (!ui.dialog.open) return;
+    flashDialog("good");
+    const fx = document.createElement("div");
+    fx.className = "mission-complete-fx";
+    const title = document.createElement("strong");
+    title.textContent = "Requisito concluido!";
+    const copy = document.createElement("span");
+    copy.textContent = "Cartao atualizado";
+    fx.append(title, copy);
+    for (let i = 0; i < 12; i += 1) {
+      const spark = document.createElement("i");
+      spark.style.setProperty("--spark-x", `${Math.cos((i / 12) * TAU) * (32 + (i % 3) * 10)}px`);
+      spark.style.setProperty("--spark-y", `${Math.sin((i / 12) * TAU) * (24 + (i % 2) * 10)}px`);
+      fx.appendChild(spark);
+    }
+    ui.dialogBody.appendChild(fx);
+    setTimeout(() => fx.remove(), 1300);
   }
 
   function openSequenceMission(mission) {
@@ -823,6 +871,7 @@
       button.addEventListener("click", () => {
         if (token === mission.sequence[index]) {
           button.classList.add("done");
+          popAction(button, true);
           button.disabled = true;
           index += 1;
           fill.style.width = `${(index / mission.sequence.length) * 100}%`;
@@ -832,6 +881,8 @@
           }
         } else {
           playSound("error");
+          popAction(button, false);
+          flashDialog("bad");
           showToast("Quase. Recomece a sequencia com calma.", 1.8);
           index = 0;
           fill.style.width = "0%";
@@ -860,12 +911,15 @@
       button.addEventListener("click", () => {
         if (option === mission.answer) {
           button.classList.add("good");
+          popAction(button, true);
           choices.querySelectorAll("button").forEach((item) => (item.disabled = true));
           completeMission(mission.id);
           setTimeout(() => ui.dialog.close(), 650);
         } else {
           playSound("error");
           button.classList.add("bad");
+          popAction(button, false);
+          flashDialog("bad");
           button.disabled = true;
           showToast("Essa escolha nao ajuda a unidade. Tente outra.", 1.8);
         }
@@ -890,6 +944,7 @@
         if (target.has(option)) {
           selected.add(option);
           button.classList.add("good");
+          popAction(button, true);
           button.disabled = true;
           if (selected.size === target.size) {
             completeMission(mission.id);
@@ -898,6 +953,8 @@
         } else {
           playSound("error");
           button.classList.add("bad");
+          popAction(button, false);
+          flashDialog("bad");
           button.disabled = true;
           showToast("Esse item nao resolve este desafio.", 1.7);
         }
@@ -1238,6 +1295,7 @@
         if (mission.targets.includes(label)) {
           selected.add(label);
           button.classList.add("good");
+          popAction(button, true);
           button.disabled = true;
           playSound("click");
           if (selected.size === mission.targets.length) {
@@ -1246,6 +1304,8 @@
           }
         } else {
           button.classList.add("bad");
+          popAction(button, false);
+          flashDialog("bad");
           button.disabled = true;
           playSound("error");
           showToast("Isso aumenta o risco. Escolha atitudes seguras.", 1.8);
@@ -1329,6 +1389,112 @@
     });
     ui.dialogBody.append(wrap, controls, feedback);
     updateRapel();
+  }
+
+  function openCompassMission(mission) {
+    showDialog(mission, "Mini-game de bussola");
+    let index = 0;
+    let angle = 315;
+    const wrap = document.createElement("div");
+    wrap.className = "compass-game";
+    const dial = document.createElement("div");
+    dial.className = "compass-dial";
+    const targetMark = document.createElement("span");
+    targetMark.className = "compass-target";
+    const needle = document.createElement("span");
+    needle.className = "compass-needle";
+    const hub = document.createElement("span");
+    hub.className = "compass-hub";
+    for (const [label, className] of [["N", "n"], ["L", "e"], ["S", "s"], ["O", "w"]]) {
+      const mark = document.createElement("b");
+      mark.className = `compass-label ${className}`;
+      mark.textContent = label;
+      dial.appendChild(mark);
+    }
+    dial.append(targetMark, needle, hub);
+
+    const target = document.createElement("strong");
+    target.className = "compass-readout";
+    const meter = document.createElement("div");
+    meter.className = "progress-bar";
+    const fill = document.createElement("span");
+    fill.className = "progress-fill";
+    meter.appendChild(fill);
+
+    const controls = document.createElement("div");
+    controls.className = "compass-controls";
+    const left = document.createElement("button");
+    left.type = "button";
+    left.textContent = "Girar -15";
+    const lock = document.createElement("button");
+    lock.type = "button";
+    lock.textContent = "Travar rumo";
+    const right = document.createElement("button");
+    right.type = "button";
+    right.textContent = "Girar +15";
+    controls.append(left, lock, right);
+
+    const feedback = document.createElement("p");
+    feedback.className = "mini-feedback";
+
+    function delta(a, b) {
+      return Math.abs(((a - b + 540) % 360) - 180);
+    }
+
+    function currentBearing() {
+      return mission.bearings[index];
+    }
+
+    function renderCompass(message = "Ajuste a agulha e trave o rumo.") {
+      const [label, degrees] = currentBearing();
+      angle = (angle + 360) % 360;
+      needle.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+      targetMark.style.transform = `translate(-50%, -100%) rotate(${degrees}deg)`;
+      target.textContent = `Rumo ${index + 1}/${mission.bearings.length}: ${label} (${degrees} graus)`;
+      fill.style.width = `${(index / mission.bearings.length) * 100}%`;
+      feedback.className = "mini-feedback";
+      feedback.textContent = message;
+    }
+
+    function rotateBy(amount) {
+      angle += amount;
+      playSound("click");
+      renderCompass();
+    }
+
+    function lockBearing() {
+      const [label, degrees] = currentBearing();
+      const off = delta(angle, degrees);
+      if (off <= 12) {
+        index += 1;
+        playSound("plant");
+        popAction(lock, true);
+        flashDialog("good");
+        if (index >= mission.bearings.length) {
+          fill.style.width = "100%";
+          feedback.textContent = "Todos os rumos foram conferidos. Unidade orientada!";
+          feedback.className = "mini-feedback good";
+          completeMission(mission.id);
+          setTimeout(() => ui.dialog.close(), 900);
+          return;
+        }
+        feedback.className = "mini-feedback good";
+        renderCompass(`${label} travado. Proximo rumo!`);
+      } else {
+        playSound("error");
+        popAction(lock, false);
+        flashDialog("bad");
+        feedback.className = "mini-feedback bad";
+        feedback.textContent = `Ainda fora do rumo por ${Math.round(off)} graus. Ajuste com calma.`;
+      }
+    }
+
+    left.addEventListener("click", () => rotateBy(-15));
+    right.addEventListener("click", () => rotateBy(15));
+    lock.addEventListener("click", lockBearing);
+    wrap.append(target, dial, meter, controls, feedback);
+    ui.dialogBody.append(wrap);
+    renderCompass();
   }
 
   function openCreationMission(mission) {
@@ -1687,6 +1853,7 @@
     state.activeMissionId = null;
     state.selectedMissionId = null;
     state.field = null;
+    showCompletionFx();
     playSound("done");
     showToast("Requisito concluido no cartao.", 2);
     evaluateStage();
